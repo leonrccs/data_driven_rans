@@ -1,5 +1,5 @@
 """
-Postprocessing file to create barycentric map from RANS data. Class instant is
+Postprocessing file to create barycentric map from RANS data. Class instant is created
 and contains all data and plotting methods
 """
 
@@ -75,8 +75,29 @@ class BarMap:
         self.calculate_barycentric_coordinates()
 
     def calculate_barycentric_coordinates(self):
-        # computing a
+        """calculate the barycentric coordinates for the given flow case"""
+
+        # filter out data points where RS-tensor is not diagonalisable
+        mask = []
+        count = 0
+        print(self.RS.shape[0])
+        for i in range(self.RS.shape[0]):
+            if (np.sum(self.RS[i].diagonal() ** 2) == 0.0):
+                mask.append(False)
+                count += 1
+            else:
+                mask.append(True)
+        print('removing %d data points ...' % count)
+
+        # removing the data points
+        self.RS = self.RS[mask]
+        self.k = self.k[mask]
+        self.cell_centers = self.cell_centers[mask]
+        print('successfully removed')
+
+        # computing b
         b = anisotropy(self.RS, self.k)
+        print(b[0])
 
         # spectral decomposition of b
         eig_val, eig_vec = np.linalg.eig(b)
@@ -148,30 +169,30 @@ class BarMap:
 
 if __name__ == '__main__':
 
-    folder = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/'
+    # folder = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/'
+    folder = '/home/leonriccius/Downloads/converging_diverging_channel/DNS/'
     # '/home/leonriccius/gkm/Masters_Thesis/Fluid_Data/converging_diverging_channel/DNS/'
     # '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/converging_diverging_channel/7900/original_mesh/'
-    cases = ['10595_kOmegaSST']  # ['7900']  # ['kEpsilon', 'realizableKE', 'kOmega', 'kOmegaSST']
-    time = '1500'
+    cases = ['12600']  # ['7900']  # ['kEpsilon', 'realizableKE', 'kOmega', 'kOmegaSST']
+    time = '/tensordata' # '1500'
 
     titles = [r'$k-\epsilon$', r'realizable $k-\epsilon$', r'$k-\omega$', r'$k-\omega$ SST']
 
     maps = []
 
-    for val in cases: [maps.append(BarMap(folder + val + '/' + time))]
+    for val in cases: [maps.append(BarMap(folder + val + time))]
 
     # fig, ax = plt.subplots()
     # maps[0].plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
 
     fig, ax = plt.subplots()
-    maps[0].calculate_barycentric_coordinates()
     maps[0].plot_data_points(ax)
     maps[0].plot_triangle(ax)
     plt.show()
 
-    fig, ax = plt.subplots()
-    maps[0].plot_on_geometry(ax, extent=[0., 9., 0., 3.035])
-    plt.show()
+    # fig, ax = plt.subplots()
+    # maps[0].plot_on_geometry(ax, extent=[0., 9., 0., 3.035])
+    # plt.show()
 
     # fig, ax = plt.subplots(1, 4, figsize=(12, 5.5), sharex=True, sharey=True, tight_layout=True)  # figsize=(6, 4))
     # fig, ax = plt.subplots(1, 1, figsize=(12, 3), sharex=True, tight_layout=True)  # figsize=(6, 4)), sharey=True
