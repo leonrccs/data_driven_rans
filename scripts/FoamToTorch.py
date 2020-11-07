@@ -6,8 +6,8 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['10595_kOmegaSST'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
-    rans_path = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/'
+    rans_dir =  ['700', '1400', '2800', '5600', '10595'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_path = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/kEpsilon/'
     rans_time = '1500'
 
     for i in rans_dir:

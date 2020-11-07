@@ -59,45 +59,67 @@ def plot_conv_div_channel_7900_boundaries(axis, path, linewidth=1, color='black'
 
 class BarMap:
 
-    def __init__(self, path):
-        self.RS = np.array(tn.load(path + '/RS-torch.th')).reshape((-1, 3, 3))
-        self.k = np.array(tn.load(path + '/k-torch.th'))
-        self.cell_centers = np.array(tn.load(path + '/cellCenters-torch.th'))
-        if self.cell_centers.shape[1] == 3:  # in case cell_centers still contains all 3 coords
-            self.cell_centers = np.array([self.cell_centers[:, 0], self.cell_centers[:, 1]]).T
+    def __init__(self):  # (self, path)
+        self.RS = np.array([])  # np.array(tn.load(path + '/RS-torch.th')).reshape((-1, 3, 3))
+        self.k = np.array([])  # np.array(tn.load(path + '/k-torch.th'))
+        self.cell_centers = np.array([])   # np.array(tn.load(path + '/cellCenters-torch.th'))
         self.eig_val_sorted = np.array([])
         self.eig_vec_sorted = np.array([])
+        self.b = np.array([])
+        self.isb = False
         self.c = np.array([])
         self.x_bar = np.array([])
         self.y_bar = np.array([])
         self.x_lim = np.array([1, 0, .5])
         self.y_lim = np.array([0, 0, np.sin(np.pi / 3)])
-        self.calculate_barycentric_coordinates()
+        # self.calculate_barycentric_coordinates()
+
+    def load_from_path(self, path):
+        """Load the Data From an OpenFoam flow case.
+        path should point to the time directory of interest"""
+        self.RS = np.array(tn.load(path + '/RS-torch.th')).reshape((-1, 3, 3))
+        self.k = np.array(tn.load(path + '/k-torch.th'))
+        self.cell_centers = np.array(tn.load(path + '/cellCenters-torch.th'))
+        if self.cell_centers.shape[1] == 3:  # in case cell_centers still contains all 3 coords
+            self.cell_centers = np.array([self.cell_centers[:, 0], self.cell_centers[:, 1]]).T
+
+    def load_from_variable(self, b, cell_centers):
+        """load in b tensor and directly and skip its calculation
+        also load cell centers"""
+        self.b = b
+        self.isb = True
+        self.cell_centers = cell_centers
+        if self.cell_centers.shape[1] == 3:  # in case cell_centers still contains all 3 coords
+            self.cell_centers = np.array([self.cell_centers[:, 0], self.cell_centers[:, 1]]).T
 
     def calculate_barycentric_coordinates(self):
-        """calculate the barycentric coordinates for the given flow case"""
+        """calculate the barycentric coordinates for the given dataset"""
 
-        # filter out data points where RS-tensor is not diagonalisable
-        mask = []
-        count = 0
-        print(self.RS.shape[0])
-        for i in range(self.RS.shape[0]):
-            if (np.sum(self.RS[i].diagonal() ** 2) == 0.0):
-                mask.append(False)
-                count += 1
-            else:
-                mask.append(True)
-        print('removing %d data points ...' % count)
+        if not self.isb:
+            # filter out data points where RS-tensor is not diagonalisable
+            mask = []
+            count = 0
 
-        # removing the data points
-        self.RS = self.RS[mask]
-        self.k = self.k[mask]
-        self.cell_centers = self.cell_centers[mask]
-        print('successfully removed')
+            for i in range(self.RS.shape[0]):
+                if np.sum(self.RS[i].diagonal() ** 2) == 0.0:
+                    mask.append(False)
+                    count += 1
+                else:
+                    mask.append(True)
+            print('removing %d data points ...' % count)
 
-        # computing b
-        b = anisotropy(self.RS, self.k)
-        print(b[0])
+            # removing the data points
+            self.RS = self.RS[mask]
+            self.k = self.k[mask]
+            self.cell_centers = self.cell_centers[mask]
+            print('successfully removed')
+
+            # computing b
+            b = anisotropy(self.RS, self.k)
+            print(b.shape)
+
+        else:
+            b = self.b
 
         # spectral decomposition of b
         eig_val, eig_vec = np.linalg.eig(b)
@@ -180,15 +202,23 @@ if __name__ == '__main__':
 
     maps = []
 
-    for val in cases: [maps.append(BarMap(folder + val + time))]
+    # for val in cases: [maps.append(BarMap())]  # [maps.append(BarMap(folder + val + time))]
+    b = np.random.random([500, 3, 3])
+    cells = np.random.random([500, 2])
+    Test_BarMap = BarMap()
+    # Test_BarMap.load_from_variable(b, cells)
+    Test_BarMap.load_from_path(folder + cases[0] + time)
+    Test_BarMap.calculate_barycentric_coordinates()
 
+    fig, ax = plt.subplots()
+    Test_BarMap.plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
     # fig, ax = plt.subplots()
     # maps[0].plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
 
-    fig, ax = plt.subplots()
-    maps[0].plot_data_points(ax)
-    maps[0].plot_triangle(ax)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # maps[0].plot_data_points(ax)
+    # maps[0].plot_triangle(ax)
+    # plt.show()
 
     # fig, ax = plt.subplots()
     # maps[0].plot_on_geometry(ax, extent=[0., 9., 0., 3.035])
