@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 import seaborn as sns
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon, PathPatch
+from matplotlib.patches import Polygon
 from matplotlib.path import Path
 
 
@@ -46,7 +46,6 @@ def plot_periodic_hills_boundaries(axis, linewidth=1, color='black'):
     axis.plot([0, 9], [3.035, 3.035], linewidth=linewidth, color=color)
 
 
-# function for plotting upper and lower boundaries of flow case
 def plot_conv_div_channel_7900_boundaries(axis, path, linewidth=1, color='black'):
     """plot boundaries of converging diverging channel case"""
     x_new = np.linspace(0, 12.5664, 200)

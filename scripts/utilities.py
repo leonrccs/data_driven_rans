@@ -29,7 +29,7 @@ def get_invariants(s0, r0):
     invar[:, 4] = (r2s2[:, 0, 0] + r2s2[:, 1, 1] + r2s2[:, 2, 2])  # Tr(r2s2)
 
     # Scale invariants by sigmoid function
-    # Can use other scalings here
+    # Can use other scaling here
     invar_sig = (1.0 - th.exp(-invar)) / (1.0 + th.exp(-invar))
     invar_sig[invar_sig != invar_sig] = 0
 

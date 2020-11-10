@@ -6,8 +6,8 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['700', '1400', '2800', '5600', '10595'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
-    rans_path = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/kEpsilon/'
+    rans_dir =  ['kEpsilon'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_path = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/converging_diverging_channel/12600/original_mesh/'
     rans_time = '1500'
 
     for i in rans_dir:
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         # Get index and coordinates of slice
         cell_z = cell_n[:, 2]
         cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == 2.205)  # phill 2.205, convdivch 1.47/1.53
+        slice_index = np.where(cell_z == 1.47)  # phill 2.205, convdivch 1.47/1.53
         cell_0 = cell_n[slice_index]
 
         # Now get averaging indexes (where x & y are the same)
