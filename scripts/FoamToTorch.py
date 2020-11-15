@@ -6,8 +6,8 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['kEpsilon'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
-    rans_path = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/converging_diverging_channel/12600/original_mesh/'
+    rans_dir =  ['700', '1400', '2800', '5600', '10595'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_path = '/home/leonriccius/Documents/Fluid_Data/training_data/periodic_hills/rans/'
     rans_time = '1500'
 
     for i in rans_dir:
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         # Get index and coordinates of slice
         cell_z = cell_n[:, 2]
         cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == 1.47)  # phill 2.205, convdivch 1.47/1.53
+        slice_index = np.where(cell_z == 2.205)  # phill 2.205, convdivch 1.47/1.53
         cell_0 = cell_n[slice_index]
 
         # Now get averaging indexes (where x & y are the same)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
             omega = pre.readScalarData(rans_time, 'omega', curr_dir) # 'epsilon' or 'omega'
 
         # selecting sliced fields
-        RS_0 = pre.slicedField(RS, slice_index)
+        RS_0 = pre.slicedField(RS, slice_index).reshape(-1, 3, 3)  # symm tensor is stored as column vector
         grad_U_0 = pre.slicedField(grad_U, slice_index)
         U_0 = pre.slicedField(U, slice_index)
         k_0 = pre.slicedField(k, slice_index)
