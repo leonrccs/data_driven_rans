@@ -1,9 +1,11 @@
 # Python script with some utilities to read an write data as well as calculating tensors
 import torch as th
 import numpy as np
+from scipy.interpolate import interp1d
 
 # Default tensor type
 dtype = th.DoubleTensor
+
 
 def get_invariants(s0, r0):
     """function for computation of tensor basis
@@ -62,19 +64,44 @@ def get_tensor_functions(s0, r0):
     T[:, 4] = r0.bmm(s2) - s2.bmm(r0)
     t0 = s0.bmm(r2)
     T[:, 5] = r2.bmm(s0) + s0.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) * (
-                t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
+            t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
     T[:, 6] = rs.bmm(r2) - r2.bmm(sr)
     T[:, 7] = sr.bmm(s2) - s2.bmm(rs)
     t0 = s2.bmm(r2)
     T[:, 8] = r2.bmm(s2) + s2.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) * (
-                t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
+            t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
     T[:, 9] = r0.bmm(s2).bmm(r2) + r2.bmm(s2).bmm(r0)
 
     # Scale the tensor basis functions by the L2 norm
     l2_norm = th.zeros(T.size(0), 10)
-    # l2_norm = 0
+    # l2_norm = 0   # not sure why Nick did this, introduces numerical error IMO since dtype is changed
     for (i, j), x in np.ndenumerate(np.zeros((3, 3))):
         l2_norm += th.pow(T[:, :, i, j], 2)
     T = T / th.sqrt(l2_norm).unsqueeze(2).unsqueeze(3)
 
     return T
+
+
+def bottom_interpolation(x_new):
+    """
+    gives back spline interpolation for points on bottom boundary
+    :return: interpolation function (takes x, gives back y)
+    """
+    # define bottom boundary
+    x = (1.929 / 54) * np.array([0., 0.1, 9., 14., 20., 30., 40., 53.9, 54.])
+    x = np.append(x, 9 - x[::-1])
+    y = (1.929 / 54) * np.array([28., 28., 27., 24., 19., 11., 4., 0., 0.])
+    y = np.append(y, y[::-1])
+
+    # spline interpolation
+    return interp1d(x, y, kind='cubic', fill_value='extrapolate')(x_new)
+
+
+def mask_boundary_points(x, y, blthickness=0.15):
+    mask = np.ones(x.shape, dtype=bool)
+    y_interp = bottom_interpolation(x)
+    mask[np.where(y < y_interp + blthickness)] = False
+    mask[np.where(y > 3.035 - blthickness)] = False
+    mask[np.where(x < 0. + blthickness)] = False
+    mask[np.where(x > 9. - blthickness)] = False
+    return mask
