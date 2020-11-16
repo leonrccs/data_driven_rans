@@ -63,6 +63,8 @@ class TBNNModel:
     def __init__(self, d_in, h, d_out):
         self.model = TBNN(d_in, h, d_out).double()
         self.loss_fn = nn.MSELoss()
+        self.loss_vector = np.array([])
+        self.val_loss_vector = np.array([])
         self.inv = th.tensor([])
         self.inv_train = th.tensor([])
         self.inv_val = th.tensor([])
@@ -136,11 +138,11 @@ class TBNNModel:
         initial_T = self.T_train[perm[0:20]]
         initial_b = self.b_train[perm[0:20]]
         initial_pred, _ = self.model(initial_inv, initial_T)
-        loss_vector = self.loss_fn(initial_pred, initial_b).detach().numpy()
+        self.loss_vector = self.loss_fn(initial_pred, initial_b).detach().numpy()
 
         # initialize validation loss
         b_val_pred, _ = self.model(self.inv_val, self.T_val)
-        val_loss_vector = self.loss_fn(b_val_pred, self.b_val).detach().numpy()
+        self.val_loss_vector = self.loss_fn(b_val_pred, self.b_val).detach().numpy()
 
         # run loop over all epochs
         for epoch in range(n_epochs):
@@ -173,13 +175,13 @@ class TBNNModel:
                 optimizer.step()
 
             # append loss to loss vector
-            loss_vector = np.append(loss_vector, loss.detach().numpy())
+            self.loss_vector = np.append(self.loss_vector, loss.detach().numpy())
 
             # compute validation error
             b_val_pred, _ = self.model(self.inv_val, self.T_val)
-            val_loss_vector = np.append(val_loss_vector, self.loss_fn(b_val_pred, self.b_val).detach().numpy())
+            self.val_loss_vector = np.append(self.val_loss_vector, self.loss_fn(b_val_pred, self.b_val).detach().numpy())
 
             # output optimization state
             if epoch % 20 == 0:
                 print('Epoch: {}, Training loss: {:.6f}, Validation loss {:.6f}'.format(epoch, loss.item(),
-                                                                                        val_loss_vector[-1]))
+                                                                                        self.val_loss_vector[-1]))

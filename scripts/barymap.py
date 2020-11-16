@@ -140,9 +140,10 @@ class BarMap:
         self.x_bar = self.c.dot(self.x_lim)
         self.y_bar = self.c.dot(self.y_lim)
 
-    def plot_data_points(self, axis, color=sns.color_palette()[0]):
+    def plot_data_points(self, axis, color=sns.color_palette()[0], markersize=0.1):
         """plot all data points in barycentric triangle"""
-        axis.scatter(self.x_bar, self.y_bar, color=color, s=0.1)
+        axis.scatter(self.x_bar, self.y_bar, color=color, s=markersize)
+        return axis
 
     def plot_triangle(self, axis):
         """plot the boundary of realizable turbulence states"""
