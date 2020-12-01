@@ -10,7 +10,7 @@ dtype = th.DoubleTensor
 def get_invariants(s0, r0):
     """function for computation of tensor basis
         Inputs:
-            s0: N x 3 x 3 (N is number of datapoints)
+            s0: N x 3 x 3 (N is number of data points)
             r0: N x 3 x 3
         Outputs:
             invar_sig : N x 5 (5 is number of scalar invariants)
@@ -98,6 +98,13 @@ def bottom_interpolation(x_new):
 
 
 def mask_boundary_points(x, y, blthickness=0.15):
+    """
+    gives a mask that ensures all points that are blthickness far away form boundary are labelled True
+    :param x: x coordinate dtype=float
+    :param y: y coordinate dytpe=float
+    :param blthickness: thickness of boundarylayer to cut dtype=float
+    :return: mask dtype=np.array(bool)
+    """
     mask = np.ones(x.shape, dtype=bool)
     y_interp = bottom_interpolation(x)
     mask[np.where(y < y_interp + blthickness)] = False

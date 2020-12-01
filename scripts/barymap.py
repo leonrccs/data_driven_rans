@@ -2,7 +2,6 @@
 Postprocessing file to create barycentric map from RANS data. Class instant is created
 and contains all data and plotting methods
 """
-# changed new other thing back
 
 import numpy as np
 import torch as tn
@@ -12,7 +11,8 @@ import seaborn as sns
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
-from matplotlib.path import Path
+
+# import scripts.utilities
 
 
 def expand_scalar_quant(vec):
@@ -62,7 +62,7 @@ class BarMap:
     def __init__(self):  # (self, path)
         self.RS = np.array([])  # np.array(tn.load(path + '/RS-torch.th')).reshape((-1, 3, 3))
         self.k = np.array([])  # np.array(tn.load(path + '/k-torch.th'))
-        self.cell_centers = np.array([])   # np.array(tn.load(path + '/cellCenters-torch.th'))
+        self.cell_centers = np.array([])  # np.array(tn.load(path + '/cellCenters-torch.th'))
         self.eig_val_sorted = np.array([])
         self.eig_vec_sorted = np.array([])
         self.b = np.array([])
@@ -141,11 +141,18 @@ class BarMap:
         self.x_bar = self.c.dot(self.x_lim)
         self.y_bar = self.c.dot(self.y_lim)
 
-    def plot_data_points(self, axis, color=sns.color_palette()[0]):
+    def plot_data_points(self, axis, color=sns.color_palette()[0], markersize=0.1):
         """plot all data points in barycentric triangle"""
-        axis.scatter(self.x_bar, self.y_bar, color=color, s=0.1)
+        axis.scatter(self.x_bar, self.y_bar, color=color, s=markersize)
+        return axis
 
-    def plot_triangle(self, axis):
+    def plot_data_line(self, axis, color=sns.color_palette()[0], **kwargs):
+        """plot all data points in barycentric triangle and connects them with line"""
+        axis.plot(self.x_bar, self.y_bar, 'o-', color=color, **kwargs)
+        return axis
+
+    @staticmethod
+    def plot_triangle(axis):
         """plot the boundary of realizable turbulence states"""
         plot_barycentric_triangle(axis)
 
@@ -157,7 +164,7 @@ class BarMap:
         c_1 = x - .5 * c_3
         c_2 = 1 - c_3 - c_1
 
-        # creating image
+        # creating image.Ba
         c_grid = np.array([c_1, c_2, c_3]).T
         image = axis.imshow(c_grid, interpolation='gaussian', origin='lower', extent=([0, 1, 0, 1]))
 
@@ -165,11 +172,11 @@ class BarMap:
         triangle = Polygon(np.array([self.x_lim, self.y_lim]).T, transform=axis.transData)
         image.set_clip_path(triangle)
 
-    def plot_on_geometry(self, axis, extent=None, resolution=0.005):
+    def plot_on_geometry(self, axis, extent=None, resolution=0.005, cut_boundary=False):
         """plot barycentric colormap on geometry of flow car.
         inputs:
             axis - matplotlib pyplot handle where to plot
-            boundaries - set rectangle that covers fluid domain (x_min, x_max, y_min, y_min)
+            boundaries - set rectangle that covers fluid domain [x_min, x_max, y_min, y_min]
             resolution - dx between data points of interpolated grid
         """
         # interpolating data points to grid
@@ -181,8 +188,13 @@ class BarMap:
             c_int[:, i] = sp.interpolate.griddata(self.cell_centers,
                                                   self.c[:, i],
                                                   (x_grid.flatten(), y_grid.flatten()),
-                                                  method='linear')  # , fill_value='extrapolate')
+                                                  method='linear')  # ,  fill_value='nan')
         c_int = c_int.reshape(x_grid.shape[0], x_grid.shape[1], 3)
+
+        # if cut_boundary:
+        #     # pass
+        #     mask = scripts.utilities.mask_boundary_points(x_grid, y_grid)
+        #     c_int[~mask] = float('nan')
 
         # plotting
         axis.imshow(c_int, extent=extent, origin='lower', interpolation='gaussian')
@@ -190,13 +202,12 @@ class BarMap:
 
 
 if __name__ == '__main__':
-
     # folder = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/'
     folder = '/home/leonriccius/Downloads/converging_diverging_channel/DNS/'
     # '/home/leonriccius/gkm/Masters_Thesis/Fluid_Data/converging_diverging_channel/DNS/'
     # '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/converging_diverging_channel/7900/original_mesh/'
     cases = ['12600']  # ['7900']  # ['kEpsilon', 'realizableKE', 'kOmega', 'kOmegaSST']
-    time = '/tensordata' # '1500'
+    time = '/tensordata'  # '1500'
 
     titles = [r'$k-\epsilon$', r'realizable $k-\epsilon$', r'$k-\omega$', r'$k-\omega$ SST']
 
