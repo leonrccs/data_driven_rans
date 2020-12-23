@@ -5,6 +5,7 @@ import torch.nn as nn
 import numpy as np
 import os
 from sklearn.model_selection import train_test_split
+import torch
 
 dtype = th.double
 
@@ -58,6 +59,16 @@ class TBNN(nn.Module, ABC):
                 x.weight.data = th.normal(th.zeros(x.weight.size()), th.zeros(x.weight.size()) + 0.2).type(dtype)
                 x.bias.data = th.zeros(x.bias.size()).type(dtype)
 
+    def save_nn(self, path):
+        th.save(self.NN.state_dict(), path)
+
+    def save_scripted_nn(self, path):
+        """
+        create traced instance of sequential nn model
+        :param path: (str) path to write scripted model
+        """
+        traced_script_module = th.jit.trace(self.NN, th.rand(1, 5).type(dtype))
+        traced_script_module.save(path)
 
 class TBNNModel:
     def __init__(self, d_in, h, d_out):

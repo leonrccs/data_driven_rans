@@ -3,3 +3,7 @@
 /scripts/.ipynb_checkpoints/
 
 scripts/__pycache__/
+
+*__pychache__
+/storage/
+/notebooks/pyro_trial.ipynb

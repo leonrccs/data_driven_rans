@@ -23,7 +23,7 @@ def readFieldData(fileName):
         print('Attempting to read file: '+str(fileName))
         rgx = re.compile('[%s]' % '(){}<>')
         rgx2 = re.compile('\((.*?)\)') #regex to get stuff in parenthesis
-        file_object  = open(str(fileName), "r").read().splitlines()
+        file_object = open(str(fileName), "r").read().splitlines()
         
         #Find line where the internal field starts
         print('Parsing file...')

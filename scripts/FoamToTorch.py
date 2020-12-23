@@ -6,18 +6,20 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['700', '1400', '2800', '5600', '10595'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
-    rans_path = '/home/leonriccius/Documents/Fluid_Data/training_data/periodic_hills/rans/'
-    rans_time = '1500'
+    rans_dir =  ['pitzDaily'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    # rans_path = '/home/leonriccius/gkm/OpenFOAM/leon-v2006/custom_cases/backward_facing_step/geneva/'
+    rans_path = '/home/leonriccius/OpenFOAM/leonriccius-v2006/run/custom_cases'
+    rans_time = '282'
 
     for i in rans_dir:
 
         # setting directory path and cell centers
-        curr_dir = rans_path + i  # rans_dir[3]
+        curr_dir = os.sep.join([rans_path, i])  # rans_dir[3]
         cell_centers = pre.readCellCenters(rans_time, curr_dir)
 
         # check if kEpsilon or kOmega
         is_epsilon = os.path.isfile(curr_dir + '/' + rans_time + '/epsilon')
+        is_devReff = os.path.isfile(os.sep.join([curr_dir, rans_time, 'turbulenceProperties:devReff']))
 
         # Get unique x & y coords
         cell_n = cell_centers.numpy()
@@ -27,7 +29,7 @@ if __name__ == '__main__':
         # Get index and coordinates of slice
         cell_z = cell_n[:, 2]
         cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == 2.205)  # phill 2.205, convdivch 1.47/1.53
+        slice_index = np.where(cell_z == 0.0)  # phill 2.205, convdivch 1.47/1.53 # bfs 0.5
         cell_0 = cell_n[slice_index]
 
         # Now get averaging indexes (where x & y are the same)
@@ -46,6 +48,8 @@ if __name__ == '__main__':
             epsilon = pre.readScalarData(rans_time, 'epsilon', curr_dir)
         else:
             omega = pre.readScalarData(rans_time, 'omega', curr_dir) # 'epsilon' or 'omega'
+        if is_devReff:
+            devReff = pre.readSymTensorData(rans_time, 'turbulenceProperties:devReff', curr_dir)
 
         # selecting sliced fields
         RS_0 = pre.slicedField(RS, slice_index).reshape(-1, 3, 3)  # symm tensor is stored as column vector
@@ -56,6 +60,8 @@ if __name__ == '__main__':
             epsilon_0 = pre.slicedField(epsilon, slice_index)
         else:
             omega_0 = pre.slicedField(omega, slice_index)
+        if is_devReff:
+            devReff_0 = pre.slicedField(devReff, slice_index).reshape(-1, 3, 3)
 
         # calculating S and R from velocity gradient
         S_0 = 0.5 * (grad_U_0 + grad_U_0.transpose(1, 2))
@@ -71,6 +77,8 @@ if __name__ == '__main__':
             pre.saveTensor(epsilon_0, 'epsilon', rans_time, curr_dir)
         else:
             pre.saveTensor(omega_0, 'omega', rans_time, curr_dir)
-
-        # saving cell center coordinates
+        if is_devReff:
+            pre.saveTensor(devReff_0, 'devReff', rans_time, curr_dir)
+        #
+        # # saving cell center coordinates
         pre.saveTensor(cell_0, 'cellCenters', rans_time, curr_dir)
