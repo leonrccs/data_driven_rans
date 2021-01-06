@@ -70,9 +70,85 @@ class TBNN(nn.Module, ABC):
         traced_script_module = th.jit.trace(self.NN, th.rand(1, 5).type(dtype))
         traced_script_module.save(path)
 
+
+class TBNN_generic(nn.Module, ABC):
+    """
+    An implementation of a fully connected feed forward
+    Neural network in pytorch.
+    """
+
+    def __init__(self, layersizes=None,
+                 activation=None,
+                 final_layer_activation=None):
+        """
+        INPUTS:
+            layersizes <list/tuple>: An iterable ordered object containing
+                                 the sizes of the tensors from the
+                                 input layer to the final output.
+                                 (See example below).
+            activation <callable>: A python callable through which
+                                    torch backpropagation is possible.
+            final_layer_activation <callable>: A python callable for
+                                    the final layer activation function.
+                                    Default: None (for regression problems)
+
+        EXAMPLE:
+            To define a NN with an input of size 2, 2 hidden layers of size
+            50 and 50, output of size 1, with tanh activation function:
+            >> layers = [2, 50, 50, 1]
+            >> neuralnet = NeuralNet(layers, activation=torch.tanh)
+            >> x = torch.randn(100, 2)   # 100 randomly sampled inputs
+            >> output = neuralnet(x)  # compute the prediction at x.
+
+        Inheriting from nn.Module ensures that all
+        NN layers defined within the __init__ function are captured and
+        stored in an OrderedDict object for easy accessibility.
+        """
+        super(TBNN_generic, self).__init__()
+        if layersizes is None:
+            layersizes = [1, 1]
+        if activation is None:
+            activation = th.relu
+        self.layersizes = layersizes
+        self.input_dim = self.layersizes[0]
+        self.hidden_sizes = self.layersizes[1:-1]
+        self.output_dim = self.layersizes[-1]
+        self.activation = activation
+        self.final_layer_activation = final_layer_activation
+        if self.final_layer_activation is None:
+            self.final_layer_activation = nn.Identity()
+        self.nlayers = len(self.hidden_sizes) + 1
+        self.layernames = []  # List to store all the FC layers
+
+        # define FC layers
+        for i in range(self.nlayers):
+            layername = 'fc_{}'.format(i + 1)
+            layermodule = nn.Linear(self.layersizes[i], self.layersizes[i + 1])
+            self.layernames.append(layername)
+            setattr(self, layername, layermodule)
+
+    def forward(self, inv, t):
+        """
+        Implement the forward pass of the NN.
+        """
+        for i, layername in enumerate(self.layernames):
+            fclayer = getattr(self, layername)
+            inv = fclayer(inv)
+            if i == self.nlayers - 1:
+                inv = self.final_layer_activation(inv)
+            else:
+                inv = self.activation(inv)
+
+        g = inv.unsqueeze(2).expand(inv.shape[0], 10, 9)
+        return (g * t).sum(dim=1), g
+
+
 class TBNNModel:
-    def __init__(self, d_in, h, d_out):
-        self.model = TBNN(d_in, h, d_out).double()
+    def __init__(self, layersizes, activation, final_layer_activation):  # d_in, h, d_out):
+        # self.model = TBNN(d_in, h, d_out).double()
+        self.net = TBNN_generic(layersizes=layersizes,
+                                activation=activation,
+                                final_layer_activation=final_layer_activation).double()
         self.loss_fn = nn.MSELoss()
         self.loss_vector = np.array([])
         self.val_loss_vector = np.array([])
@@ -125,7 +201,7 @@ class TBNNModel:
 
     def l2loss(self, lmbda):
         reg = th.tensor(0.)
-        for m in self.model.modules():
+        for m in self.net.modules():
             if hasattr(m, 'weight'):
                 reg += m.weight.norm() ** 20
         return lmbda * reg
@@ -141,18 +217,18 @@ class TBNNModel:
         self.select_training_data()
 
         # set optimizer
-        optimizer = th.optim.Adam(self.model.parameters(), lr=learning_rate)
+        optimizer = th.optim.Adam(self.net.parameters(), lr=learning_rate)
 
         # initialize training loss
         perm = np.random.permutation(self.inv_train.shape[0])
         initial_inv = self.inv_train[perm[0:20]]
         initial_T = self.T_train[perm[0:20]]
         initial_b = self.b_train[perm[0:20]]
-        initial_pred, _ = self.model(initial_inv, initial_T)
+        initial_pred, _ = self.net(initial_inv, initial_T)
         self.loss_vector = self.loss_fn(initial_pred, initial_b).detach().numpy()
 
         # initialize validation loss
-        b_val_pred, _ = self.model(self.inv_val, self.T_val)
+        b_val_pred, _ = self.net(self.inv_val, self.T_val)
         self.val_loss_vector = self.loss_fn(b_val_pred, self.b_val).detach().numpy()
 
         # run loop over all epochs
@@ -171,10 +247,10 @@ class TBNNModel:
                 b_batch = self.b_train[idx, :]
 
                 # Forward pass
-                b_pred, _ = self.model(inv_batch, T_batch)
+                b_pred, _ = self.net(inv_batch, T_batch)
 
                 # compute and print loss
-                loss = self.loss_fn(b_pred, b_batch)  # + L2loss(lmbda, model)
+                loss = self.loss_fn(b_pred, b_batch)  # + L2loss(lmbda, net)
 
                 # reset gradient buffer
                 optimizer.zero_grad()
@@ -189,10 +265,18 @@ class TBNNModel:
             self.loss_vector = np.append(self.loss_vector, loss.detach().numpy())
 
             # compute validation error
-            b_val_pred, _ = self.model(self.inv_val, self.T_val)
+            b_val_pred, _ = self.net(self.inv_val, self.T_val)
             self.val_loss_vector = np.append(self.val_loss_vector, self.loss_fn(b_val_pred, self.b_val).detach().numpy())
 
             # output optimization state
             if epoch % 20 == 0:
                 print('Epoch: {}, Training loss: {:.6f}, Validation loss {:.6f}'.format(epoch, loss.item(),
                                                                                         self.val_loss_vector[-1]))
+
+
+if __name__ == '__main__':
+
+    layers = [5, 30, 30, 30, 30, 30, 30, 30, 30, 10]
+    model_2 = TBNN_generic(layersizes=layers, final_layer_activation=torch.tanh)
+    for m in model_2.modules():
+        print(m)
