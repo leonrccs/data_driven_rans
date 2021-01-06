@@ -75,9 +75,13 @@ def get_tensor_functions(s0, r0):
     # Scale the tensor basis functions by the L2 norm
     l2_norm = th.zeros(T.size(0), 10)
     # l2_norm = 0   # not sure why Nick did this, introduces numerical error IMO since dtype is changed
+    # TODO T / sqrt(l2_norm) creates Nan entries. very unfortunate, might have to find a workaround
     for (i, j), x in np.ndenumerate(np.zeros((3, 3))):
         l2_norm += th.pow(T[:, :, i, j], 2)
-    T = T / th.sqrt(l2_norm).unsqueeze(2).unsqueeze(3)
+    # for i in range(10):
+    #     print("Min l2-norm of tensor {}: {}".format(i+1, th.min(l2_norm[:, i])))
+    #     print("Max l2-norm of tensor {}: {}".format(i + 1, th.max(l2_norm[:, i])))
+    # T = T / th.sqrt(l2_norm).unsqueeze(2).unsqueeze(3)
 
     return T
 

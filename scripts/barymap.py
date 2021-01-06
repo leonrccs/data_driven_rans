@@ -96,7 +96,7 @@ class BarMap:
         """calculate the barycentric coordinates for the given dataset"""
 
         if not self.isb:
-            # filter out data points where RS-tensor is not diagonalisable
+            # filter out data points where RS-tensor is not diagonalizable
             mask = []
             count = 0
 
@@ -164,7 +164,7 @@ class BarMap:
         c_1 = x - .5 * c_3
         c_2 = 1 - c_3 - c_1
 
-        # creating image.Ba
+        # creating image
         c_grid = np.array([c_1, c_2, c_3]).T
         image = axis.imshow(c_grid, interpolation='gaussian', origin='lower', extent=([0, 1, 0, 1]))
 
