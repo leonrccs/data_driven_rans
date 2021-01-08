@@ -116,3 +116,22 @@ def mask_boundary_points(x, y, blthickness=0.15):
     mask[np.where(x < 0. + blthickness)] = False
     mask[np.where(x > 9. - blthickness)] = False
     return mask
+
+
+def tecplot_reader(file_path, nb_var, skiprows):
+    """
+    Read in Tecplot files
+    :param file_path: path to tecplot file to read in
+    :param nb_var: number of variables stored in file
+    :param skiprows: number of rows in header to skip
+    :return: tuple of arrays
+    """
+    arrays = []
+    with open(file_path, 'r') as a:
+        for idx, line in enumerate(a.readlines()):
+            if idx < skiprows:
+                continue
+            else:
+                arrays.append([float(s) for s in line.split()])
+    arrays = np.concatenate(arrays)
+    return np.split(arrays, nb_var)
