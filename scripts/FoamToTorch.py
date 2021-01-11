@@ -7,15 +7,17 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['700', '1400', '2800', '5600', '10595'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_dir =  ['12600'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
     # rans_path = '/home/leonriccius/gkm/OpenFOAM/leon-v2006/custom_cases/backward_facing_step/geneva/'
-    rans_path = '/home/leonriccius/Documents/Fluid_Data/training_data/periodic_hills/rans'
-    rans_time = '1500'
+    rans_path = '/home/leonriccius/Documents/Fluid_Data/training_data/conv_div_channel/rans'
 
     for i in rans_dir:
 
-        # setting directory path and cell centers
+        # set directory path and extract rans time
         curr_dir = os.sep.join([rans_path, i])  # rans_dir[3]
+        rans_time = max([entry for entry in os.listdir(curr_dir) if entry.isnumeric()])
+
+        # read in cell centers
         cell_centers = pre.readCellCenters(rans_time, curr_dir)
 
         # check if kEpsilon or kOmega
@@ -30,16 +32,9 @@ if __name__ == '__main__':
         # Get index and coordinates of slice
         cell_z = cell_n[:, 2]
         cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == 2.205)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
+        slice_index = np.where(cell_z == 0.03)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
         cell_0 = cell_n[slice_index]
         print(cell_0.shape)
-
-        # Now get averaging indexes (where x & y are the same)
-        # avg_index = []
-        # for j in range(cell_xy.shape[0]):
-        #     if j % 500 == 0:
-        #         print('Finding average indexes {}/{}'.format(j, len(cell_xy)))
-        #     avg_index.append(np.where(np.all(cell_n[:, 0:2] == cell_xy[j], axis=1))[0])
 
         # reading in tensors and fields
         RS = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', curr_dir)
@@ -81,6 +76,6 @@ if __name__ == '__main__':
             pre.saveTensor(omega_0, 'omega', rans_time, curr_dir)
         if is_devReff:
             pre.saveTensor(devReff_0, 'devReff', rans_time, curr_dir)
-        #
-        # # saving cell center coordinates
+
+        # saving cell center coordinates
         pre.saveTensor(th.tensor(cell_0), 'cellCenters', rans_time, curr_dir)
