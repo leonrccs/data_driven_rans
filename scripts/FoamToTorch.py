@@ -1,4 +1,5 @@
 import numpy as np
+import torch as th
 import os.path
 # sys.path.insert(1, '/home/leonriccius/Documents/jupyter_notebook')
 import scripts.preProcess as pre
@@ -6,10 +7,10 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['2d-mesh'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_dir =  ['700', '1400', '2800', '5600', '10595'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
     # rans_path = '/home/leonriccius/gkm/OpenFOAM/leon-v2006/custom_cases/backward_facing_step/geneva/'
-    rans_path = '/home/leonriccius/OpenFOAM/leonriccius-v2006/run/converging_diverging_channel/12600'
-    rans_time = '0'
+    rans_path = '/home/leonriccius/Documents/Fluid_Data/training_data/periodic_hills/rans'
+    rans_time = '1500'
 
     for i in rans_dir:
 
@@ -29,7 +30,7 @@ if __name__ == '__main__':
         # Get index and coordinates of slice
         cell_z = cell_n[:, 2]
         cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == 0.03)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
+        slice_index = np.where(cell_z == 2.205)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
         cell_0 = cell_n[slice_index]
         print(cell_0.shape)
 
@@ -82,4 +83,4 @@ if __name__ == '__main__':
             pre.saveTensor(devReff_0, 'devReff', rans_time, curr_dir)
         #
         # # saving cell center coordinates
-        pre.saveTensor(cell_0, 'cellCenters', rans_time, curr_dir)
+        pre.saveTensor(th.tensor(cell_0), 'cellCenters', rans_time, curr_dir)
