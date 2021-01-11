@@ -169,20 +169,39 @@ class TBNNModel:
         self.n_val = 0
         self.batch_size = 20
 
+    # def load_data(self, parent_dir, child_dir):
+    #     """
+    #     Method to load data in the model  (training and validation)
+    #     :param parent_dir: (str) parent directory
+    #     :param child_dir: (str) list of strings which hold directories to loop through
+    #     """
+    #     for i, case in enumerate(child_dir):
+    #         curr_dir = os.sep.join([parent_dir, case])
+    #         self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
+    #         self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
+    #         self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
+    #         self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
+    #
+    #     self.n_total = self.inv.shape[0]
+    #     print('Successfully loaded {} data points'.format(self.n_total))
+
     def load_data(self, parent_dir, child_dir):
         """
         Method to load data in the model  (training and validation)
         :param parent_dir: (str) parent directory
         :param child_dir: (str) list of strings which hold directories to loop through
         """
-        for i, case in enumerate(child_dir):
-            curr_dir = os.sep.join([parent_dir, case])
-            self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
-            self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
-            self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b-torch.th'])).flatten(1)))
-            self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
+
+        for i, directory in enumerate(parent_dir):
+            for _, case in enumerate(child_dir[i]):
+                curr_dir = os.sep.join([directory, case])
+                self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
+                self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
+                self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
+                self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
 
         self.n_total = self.inv.shape[0]
+        print('Successfully loaded {} data points'.format(self.n_total))
 
     def select_training_data(self, train_ratio=0.7):
         """
