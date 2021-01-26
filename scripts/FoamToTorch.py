@@ -7,9 +7,9 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['12600'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_dir =  ['700_kEpsilon'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
     # rans_path = '/home/leonriccius/gkm/OpenFOAM/leon-v2006/custom_cases/backward_facing_step/geneva/'
-    rans_path = '/home/leonriccius/Documents/Fluid_Data/training_data/conv_div_channel/rans'
+    rans_path = '/home/leonriccius/OpenFOAM/leonriccius-v2006/run/periodic_hills/2d-mesh'
 
     for i in rans_dir:
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         # Get index and coordinates of slice
         cell_z = cell_n[:, 2]
         cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == 0.03)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
+        slice_index = np.where(cell_z == cell_z_unique)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
         cell_0 = cell_n[slice_index]
         print(cell_0.shape)
 
@@ -78,4 +78,4 @@ if __name__ == '__main__':
             pre.saveTensor(devReff_0, 'devReff', rans_time, curr_dir)
 
         # saving cell center coordinates
-        pre.saveTensor(th.tensor(cell_0), 'cellCenters', rans_time, curr_dir)
+        pre.saveTensor(th.tensor(cell_0), 'grid', rans_time, curr_dir)

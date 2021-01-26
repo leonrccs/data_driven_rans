@@ -4,7 +4,7 @@ and contains all data and plotting methods
 """
 
 import numpy as np
-import torch as tn
+import torch as th
 import scipy as sp
 from scipy.interpolate import interp1d
 import seaborn as sns
@@ -26,6 +26,7 @@ def expand_scalar_quant(vec):
 
 def anisotropy(rs, k):
     """calculate normalized anisotropy tensor"""
+    k = th.maximum(k, th.tensor(1e-8))
     b = rs[:] / (2 * expand_scalar_quant(k)) - 1 / 3 * np.full((len(k), 3, 3), np.identity(3))
     return b
 
@@ -77,9 +78,9 @@ class BarMap:
     def load_from_path(self, path):
         """Load the Data From an OpenFoam flow case.
         path should point to the time directory of interest"""
-        self.RS = np.array(tn.load(path + '/RS-torch.th')).reshape((-1, 3, 3))
-        self.k = np.array(tn.load(path + '/k-torch.th'))
-        self.cell_centers = np.array(tn.load(path + '/cellCenters-torch.th'))
+        self.RS = np.array(th.load(path + '/RS-torch.th')).reshape((-1, 3, 3))
+        self.k = np.array(th.load(path + '/k-torch.th'))
+        self.cell_centers = np.array(th.load(path + '/cellCenters-torch.th'))
         if self.cell_centers.shape[1] == 3:  # in case cell_centers still contains all 3 coords
             self.cell_centers = np.array([self.cell_centers[:, 0], self.cell_centers[:, 1]]).T
 

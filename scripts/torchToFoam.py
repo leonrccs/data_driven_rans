@@ -13,10 +13,12 @@ import preProcess as pre
 
 # dict for boundary types
 b_type = {'empty': "        {0:<16}{1}\n".format("type", "empty;"),
-          'fixedValue': "        {0:<16}{1}\n".format("type", "fixedValue;")+
-                        "        {0:<16}{1}\n".format("value", "uniform (0 0 0 0 0 0);"),
+          'fixedValue_uniform': "        {0:<16}{1}\n".format("type", "fixedValue;")+
+                                "        {0:<16}{1}\n".format("value", "uniform (0 0 0 0 0 0);"),
           'zeroGradient': "        {0:<16}{1}\n".format("type", "zeroGradient;"),
-          'cyclic': "        {0:<16}{1}\n".format("type", "cyclic;")}
+          'cyclic': "        {0:<16}{1}\n".format("type", "cyclic;"),
+          'fixedValue_nonuniform': "        {0:<16}{1}\n".format("type", "fixedValue;")+
+                                   "        {0:<16}{1}\n".format("value", "nonuniform List<symmTensor>")}
 
 
 def writesymmtensor(tensor,
@@ -43,10 +45,14 @@ def writesymmtensor(tensor,
         of.write("{}\n(\n".format(tensor.shape[0]))
 
         # write internal points
-        for i in range(tensor.shape[0]):
-            of.write("({:9f} {:9f} {:9f} {:9f} {:9f} {:9f})\n".format(tensor[i, 0, 0], tensor[i, 0, 1],
-                                                                      tensor[i, 0, 2], tensor[i, 1, 1],
-                                                                      tensor[i, 1, 2], tensor[i, 2, 2]))
+        # for i in range(tensor.shape[0]):
+        #     of.write("({:9f} {:9f} {:9f} {:9f} {:9f} {:9f})\n".format(tensor[i, 0, 0], tensor[i, 0, 1],
+        #                                                               tensor[i, 0, 2], tensor[i, 1, 1],
+        #                                                               tensor[i, 1, 2], tensor[i, 2, 2]))
+        for point in tensor:
+            of.write("({:9f} {:9f} {:9f} {:9f} {:9f} {:9f})\n".format(point[0, 0], point[0, 1],
+                                                                      point[0, 2], point[1, 1],
+                                                                      point[1, 2], point[2, 2]))
 
         # write boundary patches
         of.write(")\n;\n\nboundaryField\n{\n")
@@ -55,7 +61,17 @@ def writesymmtensor(tensor,
         for boundary in boundaries:
             of.write("    {}\n".format(boundary[0]))
             of.write("    {\n")
-            of.write(b_type[format(boundary[1])])
+            of.write(b_type[boundary[1]])
+
+            # write boundary filed if specified
+            if boundary[1] == 'fixedValue_nonuniform':
+                of.write("{}\n(\n".format(boundary[2].shape[0]))
+                for b_point in boundary[2]:
+                    of.write("({:9f} {:9f} {:9f} {:9f} {:9f} {:9f})\n".format(b_point[0, 0], b_point[0, 1],
+                                                                              b_point[0, 2], b_point[1, 1],
+                                                                              b_point[1, 2], b_point[2, 2]))
+                of.write(")\n;\n")
+            # close boundary bracket
             of.write("    }\n")
 
         of.write("}")
@@ -81,10 +97,14 @@ if __name__=='__main__':
     # compute b
     b0 = rs / (2 * k) - 1 / 3 * th.eye(3).unsqueeze(0).expand(k0.shape[0], 3, 3)
 
+    rand_tensor = th.rand(5, 3, 3)
+    boundary_b = 0.5 * (rand_tensor + rand_tensor.transpose(1, 2))
+
     # list for boundary names and corresponding type
-    b_list = [('inlet', 'fixedValue'),
+    b_list = [('inlet', 'fixedValue_uniform'),
               ('outlet', 'zeroGradient'),
-              ('upperWall', 'fixedValue'),
-              ('lowerWall', 'fixedValue'),
+              ('upperWall', 'fixedValue_uniform'),
+              ('lowerWall', 'fixedValue_nonuniform', boundary_b),
               ('frontAndBack', 'empty')]
     writesymmtensor(b0, '/home/leonriccius/Desktop/b_dd_pycharm', b_list)
+
