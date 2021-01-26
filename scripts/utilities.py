@@ -7,6 +7,38 @@ from scipy.interpolate import interp1d
 dtype = th.DoubleTensor
 
 
+def sigmoid_scaling(tensor):
+    return (1.0 - th.exp(-tensor)) / (1.0 + th.exp(-tensor))
+
+
+def mean_std_scaling(tensor, cap=2.):
+    # calculate mean and standard deviation
+    mu = th.mean(tensor, 0)
+    std = th.std(tensor, 0)
+
+    # normalize tensor
+    tensor = (tensor - mu) / std
+
+    # remove outliers
+    tensor[tensor > cap] = cap
+    tensor[tensor < -cap] = -cap
+
+    # rescale tensors and recalculate mu and std from capped tensor
+    tensor = tensor * std + mu
+    mu = th.mean(tensor, 0)
+    std = th.std(tensor, 0)
+
+    # renormalize tensor after capping
+    tensor = (tensor - mu) / std
+    return tensor
+
+
+def cap_tensor(tensor, cap):
+    tensor[tensor > cap] = cap
+    tensor[tensor < -cap] = -cap
+    return tensor
+
+
 def get_invariants(s0, r0):
     """function for computation of tensor basis
         Inputs:
@@ -15,6 +47,7 @@ def get_invariants(s0, r0):
         Outputs:
             invar_sig : N x 5 (5 is number of scalar invariants)
     """
+
     nCells = s0.size()[0]
     invar = th.zeros(nCells, 5).type(dtype)
 
@@ -30,12 +63,7 @@ def get_invariants(s0, r0):
     invar[:, 3] = (r2s[:, 0, 0] + r2s[:, 1, 1] + r2s[:, 2, 2])  # Tr(r2s)
     invar[:, 4] = (r2s2[:, 0, 0] + r2s2[:, 1, 1] + r2s2[:, 2, 2])  # Tr(r2s2)
 
-    # Scale invariants by sigmoid function
-    # Can use other scaling here
-    invar_sig = (1.0 - th.exp(-invar)) / (1.0 + th.exp(-invar))
-    invar_sig[invar_sig != invar_sig] = 0
-
-    return invar_sig
+    return invar
 
 
 def get_tensor_functions(s0, r0):
@@ -57,19 +85,19 @@ def get_tensor_functions(s0, r0):
 
     T[:, 0] = s0
     T[:, 1] = sr - rs
-    T[:, 2] = s2 - (1.0 / 3.0) * th.eye(3).type(dtype) * (s2[:, 0, 0] + s2[:, 1, 1] + s2[:, 2, 2]).unsqueeze(
-        1).unsqueeze(1)
-    T[:, 3] = r2 - (1.0 / 3.0) * th.eye(3).type(dtype) * (r2[:, 0, 0] + r2[:, 1, 1] + r2[:, 2, 2]).unsqueeze(
-        1).unsqueeze(1)
+    T[:, 2] = s2 - (1.0 / 3.0) * th.eye(3).type(dtype) \
+              * (s2[:, 0, 0] + s2[:, 1, 1] + s2[:, 2, 2]).unsqueeze(1).unsqueeze(1)
+    T[:, 3] = r2 - (1.0 / 3.0) * th.eye(3).type(dtype) \
+              * (r2[:, 0, 0] + r2[:, 1, 1] + r2[:, 2, 2]).unsqueeze(1).unsqueeze(1)
     T[:, 4] = r0.bmm(s2) - s2.bmm(r0)
     t0 = s0.bmm(r2)
-    T[:, 5] = r2.bmm(s0) + s0.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) * (
-            t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
+    T[:, 5] = r2.bmm(s0) + s0.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
+              * (t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
     T[:, 6] = rs.bmm(r2) - r2.bmm(sr)
     T[:, 7] = sr.bmm(s2) - s2.bmm(rs)
     t0 = s2.bmm(r2)
-    T[:, 8] = r2.bmm(s2) + s2.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) * (
-            t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
+    T[:, 8] = r2.bmm(s2) + s2.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
+              * (t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
     T[:, 9] = r0.bmm(s2).bmm(r2) + r2.bmm(s2).bmm(r0)
 
     # Scale the tensor basis functions by the L2 norm
@@ -135,3 +163,86 @@ def tecplot_reader(file_path, nb_var, skiprows):
                 arrays.append([float(s) for s in line.split()])
     arrays = np.concatenate(arrays)
     return np.split(arrays, nb_var)
+
+
+def anisotropy(rs, k):
+    """calculate normalized anisotropy tensor"""
+    k = th.maximum(k, th.tensor(1e-8)).unsqueeze(0).unsqueeze(0).expand(3, 3, k.size()[0]).permute(2, 0, 1)
+
+    b = rs[:] / (2 * k) - 1 / 3 * th.eye(3).unsqueeze(0).expand(k.shape[0], 3, 3)
+    return b
+
+
+def enforce_zero_trace(tensor):
+    """
+    input a set of basis tensors and get back a set of traceless basis tensors
+    :param tensor: N_points x 10 x 3 x 3
+    :return: tensor: N_points x 10 x 3 x 3
+    """
+    return tensor - 1. / 3. * th.eye(3).unsqueeze(0).unsqueeze(0).expand_as(tensor) \
+           * (tensor[:, :, 0, 0] + tensor[:, :, 1, 1] + tensor[:, :, 2, 2]).unsqueeze(2).unsqueeze(3).expand_as(tensor)
+
+
+# def enforce_realizability(tensor):
+#     """
+#     input a set of anisotropy tensors and get back a set of tensors that does not violate realizabiliy constraints.
+#     creates labels for branchless if clause. labels hold true where realizability contraints are violated and corrects
+#     entries
+#     :param tensor: N_points x 3 x 3
+#     :return: N_points x 3 x 3
+#     """
+#     # ensure b_ii > -1/3
+#     diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
+#     labels = (diag_min < th.tensor(-1. / 3.))
+#     tensor[:, [0, 1, 2], [0, 1, 2]] *= labels * (-1. / (3. * diag_min)) + ~labels
+#
+#     # ensure 2*|b_ij| < b_ii + b_jj + 2/3
+#     # b_12
+#     labels = (2 * th.abs(tensor[:, 0, 1]) > tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.).unsqueeze(1)
+#     tensor[:, [0, 1], [1, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.).unsqueeze(1) \
+#                                 * .5 * th.sign(tensor[:, [0, 1], [1, 0]]) + ~labels * tensor[:, [0, 1], [1, 0]]
+#
+#     # b_23
+#     labels = (2 * th.abs(tensor[:, 1, 2]) > tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1)
+#     tensor[:, [1, 2], [2, 1]] = labels * (tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
+#                                 * .5 * th.sign(tensor[:, [1, 2], [2, 1]]) + ~labels * tensor[:, [1, 2], [2, 1]]
+#
+#     # b_13
+#     labels = (2 * th.abs(tensor[:, 0, 2]) > tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1)
+#     tensor[:, [0, 2], [2, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
+#                                 * .5 * th.sign(tensor[:, [0, 2], [2, 0]]) + ~labels * tensor[:, [0, 2], [2, 0]]
+#     return tensor
+
+
+def enforce_realizability(tensor):
+    """
+    input a set of anisotropy tensors and get back a set of tensors that does not violate realizabiliy constraints.
+    creates labels for branchless if-clause. labels hold true where realizability contraints are violated and corrects
+    entries
+    :param tensor: N_points x 3 x 3
+    :return: N_points x 3 x 3
+    """
+    # ensure b_ii > -1/3
+    diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
+    labels = (diag_min < th.tensor(-1. / 3.))
+    tensor[:, [0, 1, 2], [0, 1, 2]] *= labels * (-1. / (3. * diag_min)) + ~labels
+
+    # ensure |b_ij| < 0.5
+    # b_12
+    labels = (th.abs(tensor[:, 0, 1]).unsqueeze(1) > th.tensor(.5))
+    tensor[:, [0, 1], [1, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 1]).unsqueeze(1) + ~labels
+
+    # b_13
+    labels = (th.abs(tensor[:, 0, 2]).unsqueeze(1) > th.tensor(.5))
+    tensor[:, [0, 2], [2, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 2]).unsqueeze(1) + ~labels
+
+    # b_23
+    labels = (th.abs(tensor[:, 1, 2]).unsqueeze(1) > th.tensor(.5))
+    tensor[:, [1, 2], [2, 1]] *= labels * 0.5 / th.abs(tensor[:, 1, 2]).unsqueeze(1) + ~labels
+
+
+if __name__ == '__main__':
+    test_tensor = th.rand(2, 2, 3, 3)
+    print(test_tensor)
+
+    print(enforce_zero_trace(test_tensor))
