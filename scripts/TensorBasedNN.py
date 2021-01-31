@@ -6,6 +6,7 @@ import numpy as np
 import os
 from sklearn.model_selection import train_test_split
 import torch
+import random
 
 dtype = th.double
 
@@ -203,11 +204,13 @@ class TBNNModel:
         self.n_total = self.inv.shape[0]
         print('Successfully loaded {} data points'.format(self.n_total))
 
-    def select_training_data(self, train_ratio=0.7):
+    def select_training_data(self, train_ratio=0.7, seed=None):
         """
         split data into training and test data. set random_state to ensure getting same dataset for debugging
+        :param seed: specify seed. otherwise will be chosen randomly
         :param train_ratio: (float) ratio of n_train/n_total = [0,1]
         """
+
         self.n_train = int(self.n_total * train_ratio) - int(self.n_total * train_ratio) % self.batch_size
         self.n_val = self.n_total - self.n_train
         (self.inv_train, self.inv_val,
@@ -215,34 +218,47 @@ class TBNNModel:
          self.b_train, self.b_val,
          self.grid_train, self.grid_val) = train_test_split(self.inv, self.T, self.b, self.grid,
                                                             test_size=self.n_val,
-                                                            random_state=42) # TODO remove seed for actual training
+                                                            random_state=seed) # TODO remove seed for actual training
         self.inv_train.requires_grad = True
 
     def l2loss(self, lmbda):
         reg = th.tensor(0.)
         for m in self.net.modules():
             if hasattr(m, 'weight'):
-                reg += m.weight.norm() ** 20
+                reg += m.weight.norm() ** 2
         return lmbda * reg
 
-    def train_model(self, learning_rate, n_epochs=500, batch_size=20):
+    def train_model(self, lr_initial, n_epochs=500, batch_size=20, lr_scheduler=None, **kwargs):
         """
         train the model. inputs learning_rate and epochs must be given. batch_size is optional and is 20 by default
         training data set must be adjusted to new batch_size
-        :param learning_rate: (float) learning rate of the optimization
+        :param lr_scheduler: (bool) set to true if lr scheduler should be used. False by default
+        :param lr_initial: (float) initial learning rate of the optimization
+        :param min_lr: (float) minimuim learning rate of the optimization
         :param n_epochs: (int) number of epochs for training
         :param batch_size: (int) batch size for each optimization step
         """
         self.select_training_data()
 
         # set optimizer
-        optimizer = th.optim.Adam(self.net.parameters(), lr=learning_rate)
+        optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial)
+
+        if lr_scheduler is None:
+            pass
+        else:
+            scheduler = lr_scheduler(optimizer, **kwargs)
+            # print(kwargs)
+            print(scheduler.state_dict())
+
+            # scheduler = th.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.75, patience=3,
+            #                                                     verbose=True, threshold=0.05, threshold_mode='rel',
+            #                                                     cooldown=5, min_lr=min_lr, eps=1e-07)
 
         # initialize training loss
         perm = np.random.permutation(self.inv_train.shape[0])
-        initial_inv = self.inv_train[perm[0:20]]
-        initial_T = self.T_train[perm[0:20]]
-        initial_b = self.b_train[perm[0:20]]
+        initial_inv = self.inv_train[perm[0:batch_size]]
+        initial_T = self.T_train[perm[0:batch_size]]
+        initial_b = self.b_train[perm[0:batch_size]]
         initial_pred, _ = self.net(initial_inv, initial_T)
         self.loss_vector = self.loss_fn(initial_pred, initial_b).detach().numpy()
 
@@ -291,6 +307,18 @@ class TBNNModel:
             if epoch % 20 == 0:
                 print('Epoch: {}, Training loss: {:.6f}, Validation loss {:.6f}'.format(epoch, loss.item(),
                                                                                         self.val_loss_vector[-1]))
+                if lr_scheduler is None:
+                    pass
+                else:
+                    print(scheduler.state_dict()['_last_lr'])
+
+            # scheduler step
+            if lr_scheduler is None:
+                pass
+            elif 'step_arg' in kwargs:
+                scheduler.step(self.val_loss_vector[-1])
+            else:
+                scheduler.step()
 
 
 if __name__ == '__main__':
