@@ -7,9 +7,10 @@ import scripts.preProcess as pre
 if __name__ == '__main__':
 
     # setting directory structure
-    rans_dir =  ['700_kEpsilon'] #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
+    rans_dir =  ['Re1400_kOmega_140', 'Re5600_kOmega_140', 'Re10595_kOmega_140', 'Re2800_kOmega_140', 'Re700_kOmega_140']
+    #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
     # rans_path = '/home/leonriccius/gkm/OpenFOAM/leon-v2006/custom_cases/backward_facing_step/geneva/'
-    rans_path = '/home/leonriccius/OpenFOAM/leonriccius-v2006/run/periodic_hills/2d-mesh'
+    rans_path = '/home/leonriccius/Documents/Fluid_Data/rans_kaandorp/PeriodicHills'
 
     for i in rans_dir:
 
@@ -17,65 +18,48 @@ if __name__ == '__main__':
         curr_dir = os.sep.join([rans_path, i])  # rans_dir[3]
         rans_time = max([entry for entry in os.listdir(curr_dir) if entry.isnumeric()])
 
-        # read in cell centers
+        # read in cell centers, check if AE or BE of cellCenters
         cell_centers = pre.readCellCenters(rans_time, curr_dir)
+        print('Succesfully read {} data points'.format(cell_centers.shape[0]))
 
         # check if kEpsilon or kOmega
-        is_epsilon = os.path.isfile(curr_dir + '/' + rans_time + '/epsilon')
-        is_devReff = os.path.isfile(os.sep.join([curr_dir, rans_time, 'turbulenceProperties:devReff']))
+        is_epsilon = os.path.isfile(os.sep.join([curr_dir, rans_time, 'epsilon']))
 
-        # Get unique x & y coords
-        cell_n = cell_centers.numpy()
-        # cell_coord = np.array([cell_n[:, 0], cell_n[:, 1]])
-        # cell_xy = np.unique(cell_n[:, 0:2], axis=0)
+        # reading in RS
+        if os.path.isfile(os.sep.join([curr_dir, rans_time, 'turbulenceProperties:R'])):
+            RS = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', curr_dir).reshape(-1, 3, 3)
+        else:
+            RS = pre.readSymTensorData(rans_time, 'R', curr_dir).reshape(-1, 3, 3)
 
-        # Get index and coordinates of slice
-        cell_z = cell_n[:, 2]
-        cell_z_unique = np.unique(cell_z)
-        slice_index = np.where(cell_z == cell_z_unique)  # phill 2.205/0.01, convdivch 1.47/1.53/0.03 # bfs 0.5
-        cell_0 = cell_n[slice_index]
-        print(cell_0.shape)
+        # reading in grad U
+        if os.path.isfile(os.sep.join([curr_dir, rans_time, 'gradU'])):
+            grad_U = pre.readTensorData(rans_time, 'gradU', curr_dir) # or 'gradU
+        else:
+            grad_U = pre.readTensorData(rans_time, 'grad(U)', curr_dir)
 
-        # reading in tensors and fields
-        RS = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', curr_dir)
-        grad_U = pre.readTensorData(rans_time, 'gradU', curr_dir) # or 'gradU
+        # reading in k, U
         k = pre.readScalarData(rans_time, 'k', curr_dir)
         U = pre.readVectorData(rans_time, 'U', curr_dir)
+
+        # reading in epsilon, otherwise calculate from omega
         if is_epsilon:
             epsilon = pre.readScalarData(rans_time, 'epsilon', curr_dir)
         else:
             omega = pre.readScalarData(rans_time, 'omega', curr_dir) # 'epsilon' or 'omega'
-        if is_devReff:
-            devReff = pre.readSymTensorData(rans_time, 'turbulenceProperties:devReff', curr_dir)
-
-        # selecting sliced fields
-        RS_0 = pre.slicedField(RS, slice_index).reshape(-1, 3, 3)  # symm tensor is stored as column vector
-        grad_U_0 = pre.slicedField(grad_U, slice_index)
-        U_0 = pre.slicedField(U, slice_index)
-        k_0 = pre.slicedField(k, slice_index)
-        if is_epsilon:
-            epsilon_0 = pre.slicedField(epsilon, slice_index)
-        else:
-            omega_0 = pre.slicedField(omega, slice_index)
-        if is_devReff:
-            devReff_0 = pre.slicedField(devReff, slice_index).reshape(-1, 3, 3)
+            epsilon = omega*k*0.09  # 0.09 is beta star
 
         # calculating S and R from velocity gradient
-        S_0 = 0.5 * (grad_U_0 + grad_U_0.transpose(1, 2))
-        R_0 = 0.5 * (grad_U_0 - grad_U_0.transpose(1, 2))
+        S = 0.5 * (grad_U + grad_U.transpose(1, 2))
+        R = 0.5 * (grad_U - grad_U.transpose(1, 2))
 
         # saving sliced fields
-        pre.saveTensor(RS_0, 'RS', rans_time, curr_dir)
-        pre.saveTensor(U_0, 'U', rans_time, curr_dir)
-        pre.saveTensor(k_0, 'k', rans_time, curr_dir)
-        pre.saveTensor(S_0, 'S', rans_time, curr_dir)
-        pre.saveTensor(R_0, 'R', rans_time, curr_dir)
-        if is_epsilon:
-            pre.saveTensor(epsilon_0, 'epsilon', rans_time, curr_dir)
-        else:
-            pre.saveTensor(omega_0, 'omega', rans_time, curr_dir)
-        if is_devReff:
-            pre.saveTensor(devReff_0, 'devReff', rans_time, curr_dir)
-
+        pre.saveTensor(RS, 'RS', rans_time, curr_dir)
+        pre.saveTensor(U, 'U', rans_time, curr_dir)
+        pre.saveTensor(k, 'k', rans_time, curr_dir)
+        pre.saveTensor(S, 'S', rans_time, curr_dir)
+        pre.saveTensor(R, 'R', rans_time, curr_dir)
+        pre.saveTensor(epsilon, 'epsilon', rans_time, curr_dir)
+        # else:
+        #     pre.saveTensor(omega, 'omega', rans_time, curr_dir)
         # saving cell center coordinates
-        pre.saveTensor(th.tensor(cell_0), 'grid', rans_time, curr_dir)
+        pre.saveTensor(cell_centers, 'grid', rans_time, curr_dir)
