@@ -88,7 +88,11 @@ def readCellCenters(timeStep, dir='') -> object:
     """
     #Attempt to read text file and extact data into a list
     try:
-        file_path = dir+"/"+str(timeStep)+"/cellCenters"
+        if os.path.isfile(os.sep.join([dir, str(timeStep), 'cellCenters'])):
+            file_path = dir+"/"+str(timeStep)+"/cellCenters"
+        elif os.path.isfile(os.sep.join([dir, str(timeStep), 'cellCentres'])):
+            file_path = dir + "/" + str(timeStep) + "/cellCentres"
+
         print('Reading mesh cell centers '+file_path)
 
         rgx = re.compile('\((.*?)\)') #regex to get stuff in parenthesis
