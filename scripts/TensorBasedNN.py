@@ -186,23 +186,54 @@ class TBNNModel:
     #     self.n_total = self.inv.shape[0]
     #     print('Successfully loaded {} data points'.format(self.n_total))
 
-    def load_data(self, parent_dir, child_dir):
+    def load_data(self, parent_dir, child_dir, n_samples=10000):
         """
         Method to load data in the model  (training and validation)
+        :param n_samples: (int) number of samples per flow geometry
         :param parent_dir: (str) parent directory
         :param child_dir: (str) list of strings which hold directories to loop through
         """
 
+        # loop over flow geometries
         for i, directory in enumerate(parent_dir):
+            inv = th.tensor([])
+            t = th.tensor([])
+            b = th.tensor([])
+            grid = th.tensor([])
+
+            # loop over reynolds numbers
             for _, case in enumerate(child_dir[i]):
                 curr_dir = os.sep.join([directory, case])
-                self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
-                self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
-                self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
-                self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
+                inv = th.cat((inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
+                t = th.cat((t, th.load(os.sep.join([curr_dir, 't-torch.th'])).flatten(2)))
+                b = th.cat((b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
+                grid = th.cat((grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
+
+            # check if number of samples per geom exceeds n_samples
+            print('n_samples in {}: {}'.format(directory, inv.shape[0]))
+            if inv.shape[0] > n_samples:
+                print('too many samples, randomly select {} samples ...'.format(n_samples))
+                perm = th.randperm(inv.shape[0])
+                self.inv = th.cat((self.inv, inv[perm[:n_samples]]))
+                self.T = th.cat((self.T, t[perm[:n_samples]]))
+                self.b = th.cat((self.b, b[perm[:n_samples]]))
+                self.grid = th.cat((self.grid, grid[perm[:n_samples]]))
 
         self.n_total = self.inv.shape[0]
         print('Successfully loaded {} data points'.format(self.n_total))
+
+        # earlier implementation
+        # for i, directory in enumerate(parent_dir):
+        #     inv = th.tensor([])
+        #     for _, case in enumerate(child_dir[i]):
+        #         curr_dir = os.sep.join([directory, case])
+        #         self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
+        #         self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
+        #         self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
+        #         self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
+        #
+        # self.n_total = self.inv.shape[0]
+        # print('Successfully loaded {} data points'.format(self.n_total))
 
     def select_training_data(self, train_ratio=0.7, seed=None):
         """
@@ -323,7 +354,13 @@ class TBNNModel:
 
 if __name__ == '__main__':
 
-    layers = [5, 30, 30, 30, 30, 30, 30, 30, 30, 10]
-    model_2 = TBNN_generic(layersizes=layers, final_layer_activation=torch.tanh)
-    for m in model_2.modules():
-        print(m)
+    training_dir = '/home/leonriccius/Documents/Fluid_Data/training_data'
+    training_flow_geom = ['periodic_hills', 'conv_div_channel']
+    training_cases = [['700', '1400', '5600', '10595'], ['7900', '12600']]
+    tensor_basis = 'tensordata_norm_corr_t10'
+    training_dirs = [os.sep.join([training_dir, geom, tensor_basis]) for geom in training_flow_geom]
+    ling_architecture = [5, 30, 30, 30, 30, 30, 30, 30, 30, 10]
+    layers = ling_architecture
+    model = TBNNModel(layersizes=layers, activation=nn.LeakyReLU(), final_layer_activation=th.tanh)
+
+    model.load_data(training_dirs, training_cases, n_samples=10000)

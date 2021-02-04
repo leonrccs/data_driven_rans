@@ -2,9 +2,17 @@
 import torch as th
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.interpolate import griddata
+import datetime
+import os
+import scripts.preProcess as pre
 
 # Default tensor type
 dtype = th.DoubleTensor
+
+
+def time():
+    return datetime.datetime.now().strftime("%y-%m-%d_%H-%M")
 
 
 def sigmoid_scaling(tensor):
@@ -98,23 +106,12 @@ def get_tensor_functions(s0, r0):
     t0 = s2.bmm(r2)
     T[:, 8] = r2.bmm(s2) + s2.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
               * (t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
-    T[:, 9] = r0.bmm(s2).bmm(r2) + r2.bmm(s2).bmm(r0)
-
-    # Scale the tensor basis functions by the L2 norm
-    l2_norm = th.zeros(T.size(0), 10)
-    # l2_norm = 0   # not sure why Nick did this, introduces numerical error IMO since dtype is changed
-    # TODO T / sqrt(l2_norm) creates Nan entries. very unfortunate, might have to find a workaround
-    for (i, j), x in np.ndenumerate(np.zeros((3, 3))):
-        l2_norm += th.pow(T[:, :, i, j], 2)
-    # for i in range(10):
-    #     print("Min l2-norm of tensor {}: {}".format(i+1, th.min(l2_norm[:, i])))
-    #     print("Max l2-norm of tensor {}: {}".format(i + 1, th.max(l2_norm[:, i])))
-    # T = T / th.sqrt(l2_norm).unsqueeze(2).unsqueeze(3)
+    T[:, 9] = r0.bmm(s2).bmm(r2) - r2.bmm(s2).bmm(r0)
 
     return T
 
 
-def bottom_interpolation(x_new):
+def ph_interp(x_new):
     """
     gives back spline interpolation for points on bottom boundary
     :return: interpolation function (takes x, gives back y)
@@ -129,6 +126,56 @@ def bottom_interpolation(x_new):
     return interp1d(x, y, kind='cubic', fill_value='extrapolate')(x_new)
 
 
+def cdc_interp(x_new, re='12600'):
+    """
+    gives back spline interpolation for points on bottom boundary
+    :return: interpolation function (takes x, gives back y)
+    """
+    surf_path = '/home/leonriccius/PycharmProjects/data_driven_rans/scripts/files/cdc_' + re + '.dat'
+    surfacePoints = np.genfromtxt(surf_path, delimiter=' ', skip_header=3,
+                                  skip_footer=0, names=["X", "Y"])
+
+    # Seperate out the points on the bump
+    bumpPoints = []
+    for p0 in surfacePoints:
+        if not p0['Y'] <= 10 ** (-8):
+            bumpPoints.append([p0['X'], p0['Y']])
+    bumpPoints = np.array(bumpPoints)
+    start_point = np.zeros((1, 2))
+
+    if int(re) == 12600:
+        end_point = np.array([[12.56630039, 0.0]])
+    else:
+        end_point = np.array([[12.500906900, 0.0]])
+
+    bumpPoints = np.concatenate((start_point, bumpPoints, end_point))
+
+    return interp1d(bumpPoints[:, 0], bumpPoints[:, 1], kind='linear', fill_value='extrapolate')(x_new)
+
+
+def cbfs_interp(x_new):
+    """
+    gives back spline interpolation for points on bottom boundary
+    :return: interpolation function (takes x, gives back y)
+    """
+    surf_path = '/home/leonriccius/PycharmProjects/data_driven_rans/scripts/files/cbfs.dat'
+    surfacePoints = np.genfromtxt(surf_path, delimiter=' ', skip_header=3,
+                                  skip_footer=0, names=["X", "Y"])
+
+    # Seperate out the points on the bump
+    bumpPoints = []
+    for p0 in surfacePoints:
+        if not p0['Y'] <= -10 ** (-8):
+            bumpPoints.append([p0['X'], p0['Y']])
+    bumpPoints = np.array(bumpPoints)
+    start_point = np.array([[-7.34, 1.]])
+    end_point = np.array([[15.4, 0.0]])
+
+    bumpPoints = np.concatenate((start_point, bumpPoints, end_point))
+
+    return interp1d(bumpPoints[:, 0], bumpPoints[:, 1], kind='linear', fill_value='extrapolate')(x_new)
+
+
 def mask_boundary_points(x, y, blthickness=0.15):
     """
     gives a mask that ensures all points that are blthickness far away form boundary are labelled True
@@ -138,7 +185,7 @@ def mask_boundary_points(x, y, blthickness=0.15):
     :return: mask dtype=np.array(bool)
     """
     mask = np.ones(x.shape, dtype=bool)
-    y_interp = bottom_interpolation(x)
+    y_interp = ph_interp(x)
     mask[np.where(y < y_interp + blthickness)] = False
     mask[np.where(y > 3.035 - blthickness)] = False
     mask[np.where(x < 0. + blthickness)] = False
@@ -165,11 +212,19 @@ def tecplot_reader(file_path, nb_var, skiprows):
     return np.split(arrays, nb_var)
 
 
-def anisotropy(rs, k):
+def anisotropy(rs, k, set_nan_to_0=False):
     """calculate normalized anisotropy tensor"""
-    k = th.maximum(k, th.tensor(1e-8)).unsqueeze(0).unsqueeze(0).expand(3, 3, k.size()[0]).permute(2, 0, 1)
+
+    if th.max(k == 0.0):
+        print('Warning, b contains nan entries. Consider removing nan data points')
+
+    if set_nan_to_0:
+        k = th.maximum(k, th.tensor(1e-8)).unsqueeze(0).unsqueeze(0).expand(3, 3, k.size()[0]).permute(2, 0, 1)
+    else:
+        k = k.unsqueeze(0).unsqueeze(0).expand(3, 3, k.size()[0]).permute(2, 0, 1)
 
     b = rs[:] / (2 * k) - 1 / 3 * th.eye(3).unsqueeze(0).expand(k.shape[0], 3, 3)
+
     return b
 
 
@@ -179,14 +234,65 @@ def enforce_zero_trace(tensor):
     :param tensor: N_points x 10 x 3 x 3
     :return: tensor: N_points x 10 x 3 x 3
     """
+    print('enforcing 0 trace ...')
     return tensor - 1. / 3. * th.eye(3).unsqueeze(0).unsqueeze(0).expand_as(tensor) \
            * (tensor[:, :, 0, 0] + tensor[:, :, 1, 1] + tensor[:, :, 2, 2]).unsqueeze(2).unsqueeze(3).expand_as(tensor)
+
+
+def enforce_realizability(tensor, margin=0.0):
+    """
+    input a set of anisotropy tensors and get back a set of tensors that does not violate realizabiliy constraints.
+    creates labels for branchless if clause. labels hold true where realizability contraints are violated and corrects
+    entries
+    :param margin: (float) set to small value larger than 0 to push eigenvalues over -1/3 instead
+    asymptotically approach the boundary
+    :param tensor: N_points x 3 x 3
+    :return: N_points x 3 x 3
+    """
+    # ensure b_ii > -1/3
+    diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
+    labels = (diag_min < th.tensor(-1. / 3.))
+    tensor[:, [0, 1, 2], [0, 1, 2]] *= labels * (-1. / (3. * diag_min)) + ~labels
+
+    # ensure 2*|b_ij| < b_ii + b_jj + 2/3
+    # b_12
+    labels = (2 * th.abs(tensor[:, 0, 1]) > tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.).unsqueeze(1)
+    tensor[:, [0, 1], [1, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.).unsqueeze(1) \
+                                * .5 * th.sign(tensor[:, [0, 1], [1, 0]]) + ~labels * tensor[:, [0, 1], [1, 0]]
+
+    # b_23
+    labels = (2 * th.abs(tensor[:, 1, 2]) > tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1)
+    tensor[:, [1, 2], [2, 1]] = labels * (tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
+                                * .5 * th.sign(tensor[:, [1, 2], [2, 1]]) + ~labels * tensor[:, [1, 2], [2, 1]]
+
+    # b_13
+    labels = (2 * th.abs(tensor[:, 0, 2]) > tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1)
+    tensor[:, [0, 2], [2, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
+                                * .5 * th.sign(tensor[:, [0, 2], [2, 0]]) + ~labels * tensor[:, [0, 2], [2, 0]]
+
+    # ensure positive semidefinitness by pushing smalles eigenvalue to -1/3. Reynolds stress eigenvalues are then
+    # positive semidefinite
+    # ensure lambda_1 > (3*|lambda_2| - lambda_2)/2
+    eigval, eigvec = th.symeig(tensor, eigenvectors=True)
+    labels = (eigval[:, 2] < (3 * th.abs(eigval[:, 1]) - eigval[:, 1]) * .5).unsqueeze(1)
+    eigval *= labels * ((3. * th.abs(eigval[:, 1]) - eigval[:, 1]) / (2. * eigval[:, 2])).unsqueeze(1) + ~labels
+    print('Violation of condition 1: {}'.format(th.max(labels)))
+
+    # ensure lambda_1 < 1/3 - lambda_2
+    labels = (eigval[:, 2] > 1. / 3. - eigval[:, 1]).unsqueeze(1)
+    eigval *= labels * ((1. / 3. - eigval[:, 1]) / (eigval[:, 2]) - margin).unsqueeze(1) + ~labels
+    print('Violation of condition 2: {}'.format(th.max(labels)))
+
+    # rotate tensor back to initial frame
+    tensor = eigvec.matmul(th.diag_embed(eigval).matmul(eigvec.transpose(1, 2)))
+
+    return tensor
 
 
 # def enforce_realizability(tensor):
 #     """
 #     input a set of anisotropy tensors and get back a set of tensors that does not violate realizabiliy constraints.
-#     creates labels for branchless if clause. labels hold true where realizability contraints are violated and corrects
+#     creates labels for branchless if-clause. labels hold true where realizability contraints are violated and corrects
 #     entries
 #     :param tensor: N_points x 3 x 3
 #     :return: N_points x 3 x 3
@@ -196,53 +302,161 @@ def enforce_zero_trace(tensor):
 #     labels = (diag_min < th.tensor(-1. / 3.))
 #     tensor[:, [0, 1, 2], [0, 1, 2]] *= labels * (-1. / (3. * diag_min)) + ~labels
 #
-#     # ensure 2*|b_ij| < b_ii + b_jj + 2/3
+#     # ensure |b_ij| < 0.5
 #     # b_12
-#     labels = (2 * th.abs(tensor[:, 0, 1]) > tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.).unsqueeze(1)
-#     tensor[:, [0, 1], [1, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.).unsqueeze(1) \
-#                                 * .5 * th.sign(tensor[:, [0, 1], [1, 0]]) + ~labels * tensor[:, [0, 1], [1, 0]]
-#
-#     # b_23
-#     labels = (2 * th.abs(tensor[:, 1, 2]) > tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1)
-#     tensor[:, [1, 2], [2, 1]] = labels * (tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
-#                                 * .5 * th.sign(tensor[:, [1, 2], [2, 1]]) + ~labels * tensor[:, [1, 2], [2, 1]]
+#     labels = (th.abs(tensor[:, 0, 1]).unsqueeze(1) > th.tensor(.5))
+#     tensor[:, [0, 1], [1, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 1]).unsqueeze(1) + ~labels
 #
 #     # b_13
-#     labels = (2 * th.abs(tensor[:, 0, 2]) > tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1)
-#     tensor[:, [0, 2], [2, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
-#                                 * .5 * th.sign(tensor[:, [0, 2], [2, 0]]) + ~labels * tensor[:, [0, 2], [2, 0]]
-#     return tensor
+#     labels = (th.abs(tensor[:, 0, 2]).unsqueeze(1) > th.tensor(.5))
+#     tensor[:, [0, 2], [2, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 2]).unsqueeze(1) + ~labels
+#
+#     # b_23
+#     labels = (th.abs(tensor[:, 1, 2]).unsqueeze(1) > th.tensor(.5))
+#     tensor[:, [1, 2], [2, 1]] *= labels * 0.5 / th.abs(tensor[:, 1, 2]).unsqueeze(1) + ~labels
 
-
-def enforce_realizability(tensor):
+def load_standardized_data(data):
     """
-    input a set of anisotropy tensors and get back a set of tensors that does not violate realizabiliy constraints.
-    creates labels for branchless if-clause. labels hold true where realizability contraints are violated and corrects
-    entries
-    :param tensor: N_points x 3 x 3
-    :return: N_points x 3 x 3
+    function to load in all fluid data, convert it to torch tensors, and interpolate dns data on rans grid
+    :param data: dict with different flow geometries
+    :return:
     """
-    # ensure b_ii > -1/3
-    diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
-    labels = (diag_min < th.tensor(-1. / 3.))
-    tensor[:, [0, 1, 2], [0, 1, 2]] *= labels * (-1. / (3. * diag_min)) + ~labels
 
-    # ensure |b_ij| < 0.5
-    # b_12
-    labels = (th.abs(tensor[:, 0, 1]).unsqueeze(1) > th.tensor(.5))
-    tensor[:, [0, 1], [1, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 1]).unsqueeze(1) + ~labels
+    assert (os.path.exists(data['home'])), 'dictionary specified as \'home\' does not exist'
 
-    # b_13
-    labels = (th.abs(tensor[:, 0, 2]).unsqueeze(1) > th.tensor(.5))
-    tensor[:, [0, 2], [2, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 2]).unsqueeze(1) + ~labels
+    for i, case in enumerate(data['flowCase']):
+        for j, re in enumerate(data['Re'][i]):
+            print((case, re))
+            # define dns, rans, and target paths
+            dns_path = os.sep.join([data['home'], data['dns'], case, re, 'tensordata'])
+            rans_path = os.sep.join(
+                [data['home'], data['rans'], case, 'Re{}_{}_{}'.format(re, data['model'][i][j], data['ny'][i][j])])
+            rans_time = data['ransTime'][i][j]
+            target_path = os.sep.join([data['home'], data['target_dir'], case, re])
+            print(target_path)
 
-    # b_23
-    labels = (th.abs(tensor[:, 1, 2]).unsqueeze(1) > th.tensor(.5))
-    tensor[:, [1, 2], [2, 1]] *= labels * 0.5 / th.abs(tensor[:, 1, 2]).unsqueeze(1) + ~labels
+            # load dns data
+            grid_dns = th.load(os.sep.join([dns_path, 'grid-torch.th']))
+            b_dns = th.load(os.sep.join([dns_path, 'b-torch.th']))
+            rs_dns = th.load(os.sep.join([dns_path, 'rs-torch.th']))
+            k_dns = th.load(os.sep.join([dns_path, 'k-torch.th']))
+            u_dns = th.load(os.sep.join([dns_path, 'u-torch.th']))
+            p_dns = th.load(os.sep.join([dns_path, 'p-torch.th']))
 
+            print('rans time:  ', rans_time)
+
+            # load rans data (grid, u, k, rs, epsilon)
+            grid_rans = pre.readCellCenters(rans_time, rans_path)
+            u_rans = pre.readVectorData(rans_time, 'U', rans_path)
+            k_rans = pre.readScalarData(rans_time, 'k', rans_path)
+            if os.path.isfile(os.sep.join([rans_path, rans_time, 'turbulenceProperties:R'])):
+                rs_rans = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', rans_path).reshape(-1, 3, 3)
+            else:
+                rs_rans = pre.readSymTensorData(rans_time, 'R', rans_path).reshape(-1, 3, 3)
+            u_rans = pre.readVectorData(rans_time, 'U', rans_path)
+            if os.path.isfile(os.sep.join([rans_path, rans_time, 'gradU'])):
+                grad_U_rans = pre.readTensorData(rans_time, 'gradU', rans_path)  # or 'gradU
+            else:
+                grad_U_rans = pre.readTensorData(rans_time, 'grad(U)', rans_path)
+
+            # reading in epsilon, otherwise calculate from omega
+            if os.path.isfile(os.sep.join([rans_path, rans_time, 'epsilon'])):
+                epsilon_rans = pre.readScalarData(rans_time, 'epsilon', rans_path)
+            else:
+                omega_rans = pre.readScalarData(rans_time, 'omega', rans_path)  # 'epsilon' or 'omega'
+                epsilon_rans = omega_rans * k_rans * 0.09  # 0.09 is beta star
+
+            # calculate mean rate of strain and rotation tensors
+            s = 0.5 * (grad_U_rans + grad_U_rans.transpose(1, 2))
+            r = 0.5 * (grad_U_rans - grad_U_rans.transpose(1, 2))
+
+            # normalize s and r
+            s_hat = (k_rans / epsilon_rans).unsqueeze(1).unsqueeze(2) * s
+            r_hat = (k_rans / epsilon_rans).unsqueeze(1).unsqueeze(2) * r
+
+            # cap s and r tensors
+            if data['capSandR']:
+                if th.max(th.abs(s_hat)) > 6. or th.max(th.abs(r_hat)) > 6.:
+                    print('capping tensors ...')
+                    s_hat = cap_tensor(s_hat, 6.0)
+                    r_hat = cap_tensor(r_hat, 6.0)
+
+            # calculate invariants
+            inv = get_invariants(s_hat, r_hat)
+            t = get_tensor_functions(s_hat, r_hat)
+
+            # scale invariants
+            inv = mean_std_scaling(inv)
+            print(inv.shape)
+
+            # enfore zero trace on tensorbasis
+            if data['enforceZeroTrace']:
+                t = enforce_zero_trace(t)
+
+            # compute anisotropy tensor b
+            b_rans = anisotropy(rs_rans, k_rans)
+
+            # interpolate dns data on rans grid
+            method = data['interpolationMethod']
+            b_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], b_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+                                              method=method))
+            u_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], u_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+                                              method=method))
+            rs_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], rs_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+                                               method=method))
+            k_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], k_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+                                              method=method))
+            p_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], p_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+                                              method=method))
+
+            if data['saveTensors']:
+                # create directories if not defined
+                if not os.path.exists(target_path):
+                    os.makedirs(target_path)
+
+                # save dns
+                th.save(b_dns_interp, os.sep.join([target_path, 'b_dns-torch.th']))
+                th.save(rs_dns_interp, os.sep.join([target_path, 'rs_dns-torch.th']))
+                th.save(k_dns_interp, os.sep.join([target_path, 'k_dns-torch.th']))
+                th.save(u_dns_interp, os.sep.join([target_path, 'u_dns-torch.th']))
+                th.save(p_dns_interp, os.sep.join([target_path, 'p_dns-torch.th']))
+
+                # save rans
+                th.save(grid_rans, os.sep.join([target_path, 'grid-torch.th']))
+                th.save(u_rans, os.sep.join([target_path, 'u_rans-torch.th']))
+                th.save(rs_rans, os.sep.join([target_path, 'rs_rans-torch.th']))
+                th.save(b_rans, os.sep.join([target_path, 'b_rans-torch.th']))
+                th.save(k_rans, os.sep.join([target_path, 'k_rans-torch.th']))
+                th.save(inv, os.sep.join([target_path, 'inv-torch.th']))
+                th.save(t, os.sep.join([target_path, 't-torch.th']))
+
+    return 0
+
+
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    test_tensor = th.rand(2, 2, 3, 3)
-    print(test_tensor)
+    data = {}
+    data['home'] = '/home/leonriccius/Documents/Fluid_Data'
+    data['dns'] = 'dns'
+    data['rans'] = 'rans_kaandorp'
+    data['target_dir'] = 'tensordata'
+    data['flowCase'] = ['PeriodicHills', 'ConvDivChannel']
+    data['Re'] = [['700', '1400', '2800', '5600', '10595'], ['12600']]
+    data['nx'] = [[140, 140, 140, 140, 140], [140]]
+    data['ny'] = [[150, 150, 150, 150, 150], [100]]
+    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'], ['kOmega']]
+    data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'], ['7000']]
+    data['interpolationMethod'] = 'linear'
+    data['enforceZeroTrace'] = True
+    data['capSandR'] = True
+    data['saveTensors'] = True
 
-    print(enforce_zero_trace(test_tensor))
+    load_standardized_data(data)
+
+    path = '/home/leonriccius/Documents/Fluid_Data/tensordata/ConvDivChannel/12600'
+    u = th.load(os.sep.join([path, 'u_dns-torch.th']))
+    grid = th.load(os.sep.join([path, 'grid-torch.th']))
+
+    fig, ax = plt.subplots()
+    ax.scatter(grid[:, 0], grid[:, 1], c=u[:, 0])
