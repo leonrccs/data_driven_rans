@@ -6,96 +6,82 @@ import random
 
 if __name__ == '__main__':
 
-    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata'
-    training_flow_geom = ['PeriodicHills', 'ConvDivChannel']
-    training_cases = [['700', '1400', '5600', '10595'], ['12600']]
+    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata_unscaled_inv_corr'
+    training_flow_geom = ['PeriodicHills', 'ConvDivChannel', 'SquareDuct']
+    training_cases = [['700', '1400', '5600', '10595'], ['12600'], ['2000', '3200']]
+    # training_flow_geom = ['PeriodicHills']
+    # training_cases = [['5600']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
 
+    weight_decay = 10. ** th.linspace(-14, 0, 8)
+    print(weight_decay)
 
-    geneva_architecture = [5, 200, 200, 200, 40, 20, 10]
-    ling_architecture = [5, 30, 30, 30, 30, 30, 30, 30, 30, 10]
-    layers = ling_architecture
-    model = TensorBasedNN.TBNNModel(layersizes=layers,
-                                    activation=nn.LeakyReLU(),
-                                    final_layer_activation=th.tanh)
+    weight_decay = [0.0]
+    for weight_decay_ in weight_decay:
 
-    save_model_path = './storage/models/kaandorp_data/ph_cdc/20000dp_1000ep_100bs_2-5e-5lr'
-    assert os.path.exists(save_model_path), 'path to save model not specified'
+        geneva_architecture = [5, 200, 200, 200, 40, 20, 10]
+        ling_architecture = [5, 30, 30, 30, 30, 30, 30, 30, 30, 10]
+        layers = ling_architecture
+        model = TensorBasedNN.TBNNModel(layersizes=layers,
+                                        activation=nn.LeakyReLU(),
+                                        final_layer_activation=th.nn.Identity())  # th.tanh usually used
 
-    # model.net = th.load(model_path)
+        # # if pretrained model should be used
+        # model.net = th.load(model_path)
 
-    for m in model.net.modules():
-        print(m)
+        # save_model_path = './storage/models/kaandorp_data/ph_cdc/l2_regularization_1000ep_1000_bs/{:.0e}'.format(weight_decay_)
+        save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/linear_output'
+        # save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/weight_decay_early_stopping/{:.0e}'.format(weight_decay_)
+        if not os.path.exists(save_model_path):
+            os.makedirs(save_model_path)
 
-    model.load_data(training_dirs, training_cases)
-    batch_size = 100
-    model.batch_size = batch_size  # need to specify it here because select train data needs it
+        assert os.path.exists(save_model_path), 'path to save model not specified'
+        save_model = True
 
-    seed = random.seed()
-    model.select_training_data(train_ratio=0.7)
+        # # print net modules
+        # for m in model.net.modules():
+        #     print(m)
 
-    # lr_scheduler_opt = {'mode': 'min', 'factor': 0.75, 'patience': 3, 'verbose': True,
-    #                     'threshold': 0.05, 'threshold_mode': 'rel',
-    #                     'cooldown': 5, 'min_lr': '2.5e-6', 'eps': 1e-07}
-    lr_scheduler_ = th.optim.lr_scheduler.MultiStepLR
-    lr_scheduler_opt = {'milestones': [25, 50, 100, 200, 400, 700], 'gamma': .5, 'verbose': False}
-    # model.train_model(lr_initial=0.00016, n_epochs=1000, batch_size=50,
-    #                   lr_scheduler=lr_scheduler_, **lr_scheduler_opt)
+        model.load_data(training_dirs, training_cases, n_samples=10000)
+        model.normalize_features(cap=2.)
+        batch_size = 100
+        model.batch_size = batch_size  # need to specify it here because select train data needs it
 
-    model.train_model(lr_initial=2.5e-5, n_epochs=1000, batch_size=batch_size)
+        random.seed()
+        model.select_training_data(train_ratio=0.7)
 
-    th.save(model.net, os.sep.join([save_model_path, 'model.pt']))
-    th.save(model.net.state_dict(), os.sep.join([save_model_path, 'state_dict.pt']))
-    th.save(model.loss_vector, os.sep.join([save_model_path, 'loss_vector.th']))
-    th.save(model.val_loss_vector, os.sep.join([save_model_path, 'val_loss_vector.th']))
-    # model.net.reset_parameters()
+        # # in case learning rate scheduler is used
+        # lr_scheduler_opt = {'mode': 'min', 'factor': 0.75, 'patience': 3, 'verbose': True,
+        #                     'threshold': 0.05, 'threshold_mode': 'rel',
+        #                     'cooldown': 5, 'min_lr': '2.5e-6', 'eps': 1e-07}
+        # lr_scheduler_ = th.optim.lr_scheduler.MultiStepLR
+        # lr_scheduler_opt = {'milestones': [25, 50, 100, 200, 400, 700], 'gamma': .5, 'verbose': False}
+        # model.train_model(lr_initial=0.00016, n_epochs=1000, batch_size=50,
+        #                   lr_scheduler=lr_scheduler_, **lr_scheduler_opt)
 
+        # parameters for model training
+        training_params = {'lr_initial': 2.5e-5, 'n_epochs': 1000, 'batch_size': batch_size,
+                           'early_stopping': True, 'moving_average': 5, 'lr_scheduler': None,
+                           'weight_decay': weight_decay_, 'lambda_real': 0.0}
 
-    #how to load data before:
-    # training_dir = '/home/leonriccius/Documents/Fluid_Data/training_data'
-    # # workstation_mount_point = '/home/leonriccius/gkm'  # put your mouthpoint of workstation here
-    # # training_dir = os.sep.join([workstation_mount_point, 'Masters_Thesis/Fluid_Data/training_data']) #
-    # training_flow_geom = ['periodic_hills', 'conv_div_channel']
-    # training_cases = [['700', '1400', '5600', '10595'], ['7900', '12600']]  # , '10595']
-    # # training_dir = '/home/leonriccius/Documents/Fluid_Data/training_data/periodic_hills/tensordata'
-    # # training_cases = ['700', '1400', '5600'] #, '10595']
-    #
-    # training_dirs = [os.sep.join([training_dir, geom, 'tensordata_norm_corr_t10']) for geom in training_flow_geom]
-    # # select what type of data you want. see training data folder for options
-    # print(training_dirs)
+        model.train_model(**training_params)
+        # model.train_model(lr_initial=2.5e-5,
+        #                   n_epochs=1000,
+        #                   batch_size=batch_size)  #,  weight_decay=weight_decay_)
 
+        print(training_params)
+        print('Saving model and relevant data ...')
 
+        if save_model:
+            th.save(model.net, os.sep.join([save_model_path, 'model.pt']))
+            th.save(model.net.state_dict(), os.sep.join([save_model_path, 'state_dict.pt']))
+            th.save(model.mu, os.sep.join([save_model_path, 'mu.th']))
+            th.save(model.std, os.sep.join([save_model_path, 'std.th']))
+            th.save(training_params, os.sep.join([save_model_path, 'training_params.th']))
+            th.save(model.loss_vector, os.sep.join([save_model_path, 'loss_vector.th']))
+            th.save(model.val_loss_vector, os.sep.join([save_model_path, 'val_loss_vector.th']))
+            # model.net.reset_parameters()
 
+        print('... Done!')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # NN = TensorBasedNN.TBNNModel(d_in, H, d_out)
-    #
-    # NN.model.load_state_dict(th.load(model_path))
-    # NN.model.eval()
-    #
-    # NN.load_data(training_dir, training_cases)
-    # NN.select_training_data(train_ratio=0.7)
-    #
-    # new_model_path = './storage/models/test/nn_traced.pt'
-    # # NN.model.save_nn(new_model_path)
-
-    # NN.train_model(learning_rate=1e-6, n_epochs=500, batch_size=20)
-
-    # new_model_path = './storage/models/test'
-    # th.save(NN.model, os.sep.join([new_model_path, 'model.pt']))
-    # th.save(NN.model.state_dict(), os.sep.join([new_model_path, 'state_dict.pt']))
-    # th.save(NN.loss_vector, os.sep.join([new_model_path, 'loss_vector.th']))
-    # th.save(NN.val_loss_vector, os.sep.join([new_model_path, 'val_loss_vector.th']))
-    # NN.model.reset_parameters()
+        del model
