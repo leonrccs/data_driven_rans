@@ -19,10 +19,16 @@ def sigmoid_scaling(tensor):
     return (1.0 - th.exp(-tensor)) / (1.0 + th.exp(-tensor))
 
 
-def mean_std_scaling(tensor, cap=2.):
-    # calculate mean and standard deviation
-    mu = th.mean(tensor, 0)
-    std = th.std(tensor, 0)
+def mean_std_scaling(tensor, cap=2., mu=None, std=None):
+
+    if (mu is None) & (std is None):
+        rescale = True
+
+        # calculate mean and standard deviation
+        mu = th.mean(tensor, 0)
+        std = th.std(tensor, 0)
+    else:
+        rescale = False
 
     # normalize tensor
     tensor = (tensor - mu) / std
@@ -31,14 +37,16 @@ def mean_std_scaling(tensor, cap=2.):
     tensor[tensor > cap] = cap
     tensor[tensor < -cap] = -cap
 
-    # rescale tensors and recalculate mu and std from capped tensor
-    tensor = tensor * std + mu
-    mu = th.mean(tensor, 0)
-    std = th.std(tensor, 0)
+    if rescale:
+        # rescale tensors and recalculate mu and std from capped tensor
+        tensor = tensor * std + mu
+        mu = th.mean(tensor, 0)
+        std = th.std(tensor, 0)
 
-    # renormalize tensor after capping
-    tensor = (tensor - mu) / std
-    return tensor
+        # renormalize tensor after capping
+        tensor = (tensor - mu) / std
+
+    return tensor, mu, std
 
 
 def cap_tensor(tensor, cap):
@@ -270,7 +278,7 @@ def enforce_realizability(tensor, margin=0.0):
     tensor[:, [0, 2], [2, 0]] = labels * (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.).unsqueeze(1) \
                                 * .5 * th.sign(tensor[:, [0, 2], [2, 0]]) + ~labels * tensor[:, [0, 2], [2, 0]]
 
-    # ensure positive semidefinitness by pushing smalles eigenvalue to -1/3. Reynolds stress eigenvalues are then
+    # ensure positive semidefinitness by pushing smallest eigenvalue to -1/3. Reynolds stress eigenvalues are then
     # positive semidefinite
     # ensure lambda_1 > (3*|lambda_2| - lambda_2)/2
     eigval, eigvec = th.symeig(tensor, eigenvectors=True)
@@ -288,32 +296,6 @@ def enforce_realizability(tensor, margin=0.0):
 
     return tensor
 
-
-# def enforce_realizability(tensor):
-#     """
-#     input a set of anisotropy tensors and get back a set of tensors that does not violate realizabiliy constraints.
-#     creates labels for branchless if-clause. labels hold true where realizability contraints are violated and corrects
-#     entries
-#     :param tensor: N_points x 3 x 3
-#     :return: N_points x 3 x 3
-#     """
-#     # ensure b_ii > -1/3
-#     diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
-#     labels = (diag_min < th.tensor(-1. / 3.))
-#     tensor[:, [0, 1, 2], [0, 1, 2]] *= labels * (-1. / (3. * diag_min)) + ~labels
-#
-#     # ensure |b_ij| < 0.5
-#     # b_12
-#     labels = (th.abs(tensor[:, 0, 1]).unsqueeze(1) > th.tensor(.5))
-#     tensor[:, [0, 1], [1, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 1]).unsqueeze(1) + ~labels
-#
-#     # b_13
-#     labels = (th.abs(tensor[:, 0, 2]).unsqueeze(1) > th.tensor(.5))
-#     tensor[:, [0, 2], [2, 0]] *= labels * 0.5 / th.abs(tensor[:, 0, 2]).unsqueeze(1) + ~labels
-#
-#     # b_23
-#     labels = (th.abs(tensor[:, 1, 2]).unsqueeze(1) > th.tensor(.5))
-#     tensor[:, [1, 2], [2, 1]] *= labels * 0.5 / th.abs(tensor[:, 1, 2]).unsqueeze(1) + ~labels
 
 def load_standardized_data(data):
     """
@@ -341,7 +323,11 @@ def load_standardized_data(data):
             rs_dns = th.load(os.sep.join([dns_path, 'rs-torch.th']))
             k_dns = th.load(os.sep.join([dns_path, 'k-torch.th']))
             u_dns = th.load(os.sep.join([dns_path, 'u-torch.th']))
-            p_dns = th.load(os.sep.join([dns_path, 'p-torch.th']))
+            if os.path.isfile(os.sep.join([dns_path, 'p-torch.th'])):
+                is_p = True
+                p_dns = th.load(os.sep.join([dns_path, 'p-torch.th']))
+            else:
+                is_p = False
 
             print('rans time:  ', rans_time)
 
@@ -353,11 +339,10 @@ def load_standardized_data(data):
                 rs_rans = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', rans_path).reshape(-1, 3, 3)
             else:
                 rs_rans = pre.readSymTensorData(rans_time, 'R', rans_path).reshape(-1, 3, 3)
-            u_rans = pre.readVectorData(rans_time, 'U', rans_path)
             if os.path.isfile(os.sep.join([rans_path, rans_time, 'gradU'])):
-                grad_U_rans = pre.readTensorData(rans_time, 'gradU', rans_path)  # or 'gradU
+                grad_u_rans = pre.readTensorData(rans_time, 'gradU', rans_path)  # or 'gradU
             else:
-                grad_U_rans = pre.readTensorData(rans_time, 'grad(U)', rans_path)
+                grad_u_rans = pre.readTensorData(rans_time, 'grad(U)', rans_path)
 
             # reading in epsilon, otherwise calculate from omega
             if os.path.isfile(os.sep.join([rans_path, rans_time, 'epsilon'])):
@@ -367,8 +352,8 @@ def load_standardized_data(data):
                 epsilon_rans = omega_rans * k_rans * 0.09  # 0.09 is beta star
 
             # calculate mean rate of strain and rotation tensors
-            s = 0.5 * (grad_U_rans + grad_U_rans.transpose(1, 2))
-            r = 0.5 * (grad_U_rans - grad_U_rans.transpose(1, 2))
+            s = 0.5 * (grad_u_rans + grad_u_rans.transpose(1, 2))
+            r = 0.5 * (grad_u_rans - grad_u_rans.transpose(1, 2))
 
             # normalize s and r
             s_hat = (k_rans / epsilon_rans).unsqueeze(1).unsqueeze(2) * s
@@ -385,29 +370,42 @@ def load_standardized_data(data):
             inv = get_invariants(s_hat, r_hat)
             t = get_tensor_functions(s_hat, r_hat)
 
+            # correct invariants of cases with symmetries
+            if data['correctInvariants']:
+                if case != 'SquareDuct':
+                    print('Setting invariants 3 and 4 to 0 ...')
+                    inv[:, [2, 3]] = 0.0
+
             # scale invariants
-            inv = mean_std_scaling(inv)
-            print(inv.shape)
+            # inv = mean_std_scaling(inv)
+            # print(inv.shape)
 
             # enfore zero trace on tensorbasis
             if data['enforceZeroTrace']:
                 t = enforce_zero_trace(t)
 
             # compute anisotropy tensor b
-            b_rans = anisotropy(rs_rans, k_rans)
+            b_rans = anisotropy(rs_rans, k_rans, data['removeNan'])
 
             # interpolate dns data on rans grid
+            print('Interpolating DNS data on RANS grid ...')
             method = data['interpolationMethod']
-            b_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], b_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+            if case == 'SquareDuct':
+                int_grid = grid_rans[:, [1, 2, 0]]
+            else:
+                int_grid = grid_rans
+
+            b_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], b_dns, (int_grid[:, 0], int_grid[:, 1]),
                                               method=method))
-            u_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], u_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+            u_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], u_dns, (int_grid[:, 0], int_grid[:, 1]),
                                               method=method))
-            rs_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], rs_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+            rs_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], rs_dns, (int_grid[:, 0], int_grid[:, 1]),
                                                method=method))
-            k_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], k_dns, (grid_rans[:, 0], grid_rans[:, 1]),
+            k_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], k_dns, (int_grid[:, 0], int_grid[:, 1]),
                                               method=method))
-            p_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], p_dns, (grid_rans[:, 0], grid_rans[:, 1]),
-                                              method=method))
+            if is_p:
+                p_dns_interp = th.tensor(griddata(grid_dns[:, 0:2], p_dns, (int_grid[:, 0], int_grid[:, 1]),
+                                                  method=method))
 
             if data['saveTensors']:
                 # create directories if not defined
@@ -419,7 +417,8 @@ def load_standardized_data(data):
                 th.save(rs_dns_interp, os.sep.join([target_path, 'rs_dns-torch.th']))
                 th.save(k_dns_interp, os.sep.join([target_path, 'k_dns-torch.th']))
                 th.save(u_dns_interp, os.sep.join([target_path, 'u_dns-torch.th']))
-                th.save(p_dns_interp, os.sep.join([target_path, 'p_dns-torch.th']))
+                if is_p:
+                    th.save(p_dns_interp, os.sep.join([target_path, 'p_dns-torch.th']))
 
                 # save rans
                 th.save(grid_rans, os.sep.join([target_path, 'grid-torch.th']))
@@ -440,23 +439,80 @@ if __name__ == '__main__':
     data['home'] = '/home/leonriccius/Documents/Fluid_Data'
     data['dns'] = 'dns'
     data['rans'] = 'rans_kaandorp'
-    data['target_dir'] = 'tensordata'
-    data['flowCase'] = ['PeriodicHills', 'ConvDivChannel']
-    data['Re'] = [['700', '1400', '2800', '5600', '10595'], ['12600']]
-    data['nx'] = [[140, 140, 140, 140, 140], [140]]
-    data['ny'] = [[150, 150, 150, 150, 150], [100]]
-    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'], ['kOmega']]
-    data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'], ['7000']]
+    data['target_dir'] = 'tensordata_unscaled_inv_corr'
+    data['flowCase'] = ['PeriodicHills',
+                        'ConvDivChannel',
+                        'CurvedBackwardFacingStep',
+                        'SquareDuct']
+    data['Re'] = [['700', '1400', '2800', '5600', '10595'],
+                  ['12600', '7900'],
+                  ['13700'],
+                  ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+    data['nx'] = [[140, 140, 140, 140, 140],
+                  [140, 140],
+                  [140],
+                  [50, 50, 50, 50, 50, 50, 50]]
+    data['ny'] = [[150, 150, 150, 150, 150],
+                  [100, 100],
+                  [150],
+                  [50, 50, 50, 50, 50, 50, 50]]
+    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
+                     ['kOmega', 'kOmega'],
+                     ['kOmega'],
+                     ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+    data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
+                        ['7000', '7000'],
+                        ['3000'],
+                        ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+
     data['interpolationMethod'] = 'linear'
     data['enforceZeroTrace'] = True
     data['capSandR'] = True
     data['saveTensors'] = True
+    data['removeNan'] = True
+    data['correctInvariants'] = True
 
     load_standardized_data(data)
 
-    path = '/home/leonriccius/Documents/Fluid_Data/tensordata/ConvDivChannel/12600'
-    u = th.load(os.sep.join([path, 'u_dns-torch.th']))
-    grid = th.load(os.sep.join([path, 'grid-torch.th']))
+    # inv = th.load('/home/leonriccius/Documents/Fluid_Data/tensordata_unscaled_inv_corr/PeriodicHills/2800/inv-torch.th')
 
-    fig, ax = plt.subplots()
-    ax.scatter(grid[:, 0], grid[:, 1], c=u[:, 0])
+
+
+
+    # path = '/home/leonriccius/Documents/Fluid_Data/tensordata/SquareDuct/1800'
+    # u = th.load(os.sep.join([path, 'u_rans-torch.th']))
+    # inv = th.load(os.sep.join([path, 'inv-torch.th']))
+    # grid = th.load(os.sep.join([path, 'grid-torch.th']))
+    # b = th.load(os.sep.join([path, 'b_rans-torch.th']))
+    #
+    # fig, ax = plt.subplots()
+    # ax.axis('equal')
+    # plot = ax.tricontourf(grid[:, 1], grid[:, 2], b[:, 0, 0])
+    # fig.colorbar(plot)
+    # fig.show()
+
+
+    # data['flowCase'] = ['PeriodicHills',
+    #                     # 'ConvDivChannel',
+    #                     'CurvedBackwardFacingStep',
+    #                     'SquareDuct']
+    # data['Re'] = [['700', '1400', '2800', '5600', '10595'],
+    #               # ['12600', '7900'],
+    #               ['13700'],
+    #               ['1800']]
+    # data['nx'] = [[140, 140, 140, 140, 140],
+    #               # [140, 140],
+    #               [140],
+    #               [50]]
+    # data['ny'] = [[150, 150, 150, 150, 150],
+    #               # [100, 100],
+    #               [150],
+    #               [50]]
+    # data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
+    #                  # ['kOmega', 'kOmega'],
+    #                  ['kOmega'],
+    #                  ['kOmega']]
+    # data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
+    #                     # ['7000', '7000'],
+    #                     ['3000'],
+    #                     ['40000']]
