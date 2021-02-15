@@ -8,6 +8,7 @@ import torch as th
 import scipy as sp
 from scipy.interpolate import interp1d
 import seaborn as sns
+import os
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
@@ -116,7 +117,7 @@ class BarMap:
             print('successfully removed')
 
             # computing b
-            b = anisotropy(self.RS, self.k)
+            b = anisotropy(th.tensor(self.RS), th.tensor(self.k))
             print(b.shape)
 
         else:
@@ -142,9 +143,9 @@ class BarMap:
         self.x_bar = self.c.dot(self.x_lim)
         self.y_bar = self.c.dot(self.y_lim)
 
-    def plot_data_points(self, axis, color=sns.color_palette()[0], markersize=0.1):
+    def plot_data_points(self, axis, color=sns.color_palette()[0], **kwargs):
         """plot all data points in barycentric triangle"""
-        axis.scatter(self.x_bar, self.y_bar, color=color, s=markersize)
+        axis.scatter(self.x_bar, self.y_bar, color=color, **kwargs)
         return axis
 
     def plot_data_line(self, axis, color=sns.color_palette()[0], **kwargs):
@@ -157,13 +158,19 @@ class BarMap:
         """plot the boundary of realizable turbulence states"""
         plot_barycentric_triangle(axis)
 
-    def get_colormap(self, axis):
+    def get_colormap(self, axis, normalized=True):
         """plot a colormap in a given axis"""
         # compute coefficients from coordinates
         y, x = np.meshgrid(np.linspace(0, 1, 100), np.linspace(0, 1, 100))
         c_3 = 2 / np.sqrt(3) * y
         c_1 = x - .5 * c_3
         c_2 = 1 - c_3 - c_1
+
+        if normalized:
+            norm_c = np.array([c_1, c_2, c_3]).max(axis=0)
+            c_1 = c_1 / norm_c
+            c_2 = c_2 / norm_c
+            c_3 = c_3 / norm_c
 
         # creating image
         c_grid = np.array([c_1, c_2, c_3]).T
@@ -182,7 +189,9 @@ class BarMap:
         """
         # interpolating data points to grid
         if extent is None:
-            extent = [0., 1., 0., 1.]
+            # extent = [0., 1., 0., 1.]
+            extent = [self.cell_centers[:, 0].min(), self.cell_centers[:, 0].max(),
+                      self.cell_centers[:, 1].min(), self.cell_centers[:, 1].max()]
         x_grid, y_grid = np.meshgrid(np.arange(*extent[0:2], resolution), np.arange(*extent[2:4], resolution))
         c_int = np.zeros((len(x_grid.flatten()), 3))
         for i in range(3):
@@ -190,6 +199,8 @@ class BarMap:
                                                   self.c[:, i],
                                                   (x_grid.flatten(), y_grid.flatten()),
                                                   method='linear')  # ,  fill_value='nan')
+
+        c_int = c_int/np.expand_dims(c_int.max(axis=1), axis=1)
         c_int = c_int.reshape(x_grid.shape[0], x_grid.shape[1], 3)
 
         # if cut_boundary:
@@ -212,18 +223,24 @@ if __name__ == '__main__':
 
     titles = [r'$k-\epsilon$', r'realizable $k-\epsilon$', r'$k-\omega$', r'$k-\omega$ SST']
 
-    maps = []
+    # maps = []
+    #
+    path = '/home/leonriccius/Documents/Fluid_Data/tensordata/SquareDuct/2000'
 
-    # for val in cases: [maps.append(BarMap())]  # [maps.append(BarMap(folder + val + time))]
-    b = np.random.random([500, 3, 3])
-    cells = np.random.random([500, 2])
-    Test_BarMap = BarMap()
-    # Test_BarMap.load_from_variable(b, cells)
-    Test_BarMap.load_from_path(folder + cases[0] + time)
-    Test_BarMap.calculate_barycentric_coordinates()
+    b_dns = th.load(os.sep.join([path, 'b_dns-torch.th']))
+    b_rans = th.load(os.sep.join([path, 'b_rans-torch.th']))
+    grid = th.load(os.sep.join([path, 'grid-torch.th']))
+
+    barm_rans = BarMap()
+    barm_rans.load_from_variable(b_rans, grid[:, 1:3])
+    barm_rans.calculate_barycentric_coordinates()
 
     fig, ax = plt.subplots()
-    Test_BarMap.plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
+    barm_rans.plot_on_geometry(ax)
+    fig.show()
+
+
+
     # fig, ax = plt.subplots()
     # maps[0].plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
 
