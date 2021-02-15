@@ -144,6 +144,30 @@ class TBNN_generic(nn.Module, ABC):
         return (g * t).sum(dim=1), g
 
 
+def loss_realizability(tensor):
+
+    # reshape tensor
+    tensor = tensor.reshape(-1, 3 ,3)
+
+    diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
+    labels = (diag_min < th.tensor(-1. / 3.))
+
+    # b_ii > -1/3
+    loss_bii = nn.ReLU()(th.tensor(-1. / 3.) - diag_min)
+
+    # 2*|b_ij| < b_ii + b_jj + 2/3
+    loss_b12 = nn.ReLU()(2 * th.abs(tensor[:, 0, 1]) - (tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.))
+    loss_b23 = nn.ReLU()(2 * th.abs(tensor[:, 1, 2]) - (tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.))
+    loss_b13 = nn.ReLU()(2 * th.abs(tensor[:, 0, 2]) - (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.))
+
+    # lambda_1 > (3*|lambda_2| - lambda_2)/2,    lambda_1 < 1/3 - lambda_2
+    eigval, eigvec = th.symeig(tensor, eigenvectors=True)
+    loss_e1 = nn.ReLU()((3 * th.abs(eigval[:, 1]) - eigval[:, 1]) * .5 - eigval[:, 2])
+    loss_e2 = nn.ReLU()(eigval[:, 2] - (1. / 3. - eigval[:, 1]))
+
+    return th.sum(loss_bii + loss_b12 + loss_b23 + loss_b13 + loss_e1 + loss_e2)/tensor.shape[0]
+
+
 class TBNNModel:
     def __init__(self, layersizes, activation, final_layer_activation):  # d_in, h, d_out):
         # self.model = TBNN(d_in, h, d_out).double()
@@ -156,6 +180,8 @@ class TBNNModel:
         self.inv = th.tensor([])
         self.inv_train = th.tensor([])
         self.inv_val = th.tensor([])
+        self.mu = None
+        self.std = None
         self.T = th.tensor([])
         self.T_train = th.tensor([])
         self.T_val = th.tensor([])
@@ -218,6 +244,11 @@ class TBNNModel:
                 self.T = th.cat((self.T, t[perm[:n_samples]]))
                 self.b = th.cat((self.b, b[perm[:n_samples]]))
                 self.grid = th.cat((self.grid, grid[perm[:n_samples]]))
+            else:
+                self.inv = th.cat((self.inv, inv))
+                self.T = th.cat((self.T, t))
+                self.b = th.cat((self.b, b))
+                self.grid = th.cat((self.grid, grid))
 
         self.n_total = self.inv.shape[0]
         print('Successfully loaded {} data points'.format(self.n_total))
@@ -234,6 +265,35 @@ class TBNNModel:
         #
         # self.n_total = self.inv.shape[0]
         # print('Successfully loaded {} data points'.format(self.n_total))
+
+    def normalize_features(self, cap=2.0):
+        """
+        normalize training features to mu = 0, sigma = 1
+        saves normalized data and mu, sigma for scaling of test data
+        :param cap: cap invatiants at certain level
+        """
+        # calculate mean and standard deviation
+        mu = th.mean(self.inv, 0)
+        std = th.std(self.inv, 0)
+        std = std + (std < 0.005)*1.0
+
+        # normalize tensor
+        self.inv = (self.inv - mu) / std
+
+        # remove outliers
+        self.inv[self.inv > cap] = cap
+        self.inv[self.inv < -cap] = -cap
+
+        # rescale tensors and recalculate mu and std from capped tensor
+        self.inv = self.inv * std + mu
+
+        # calculate
+        self.mu = th.mean(self.inv, 0)
+        self.std = th.std(self.inv, 0)
+        self.std = self.std + (self.std < 0.005)
+
+        # renormalize tensor after capping
+        self.inv = (self.inv - self.mu) / self.std
 
     def select_training_data(self, train_ratio=0.7, seed=None):
         """
@@ -252,27 +312,43 @@ class TBNNModel:
                                                             random_state=seed) # TODO remove seed for actual training
         self.inv_train.requires_grad = True
 
-    def l2loss(self, lmbda):
+    def l2loss(self):
         reg = th.tensor(0.)
         for m in self.net.modules():
             if hasattr(m, 'weight'):
-                reg += m.weight.norm() ** 2
-        return lmbda * reg
+                reg += m.weight.norm()
+        return reg
 
-    def train_model(self, lr_initial, n_epochs=500, batch_size=20, lr_scheduler=None, **kwargs):
+    # def train_model(self, lr_initial, n_epochs=500, batch_size=20, lr_scheduler=None, weight_decay=0.0, **kwargs):
+    def train_model(self, **kwargs):
         """
         train the model. inputs learning_rate and epochs must be given. batch_size is optional and is 20 by default
         training data set must be adjusted to new batch_size
+        :param weight_decay: (float) l2 regularization parameter
         :param lr_scheduler: (bool) set to true if lr scheduler should be used. False by default
         :param lr_initial: (float) initial learning rate of the optimization
-        :param min_lr: (float) minimuim learning rate of the optimization
         :param n_epochs: (int) number of epochs for training
         :param batch_size: (int) batch size for each optimization step
         """
-        self.select_training_data()
+
+        print(kwargs)
+
+        lr_initial = kwargs['lr_initial']
+        n_epochs = kwargs['n_epochs']
+        batch_size = kwargs['batch_size']
+        lr_scheduler = kwargs['lr_scheduler']
+        weight_decay = kwargs['weight_decay']
+        moving_average = kwargs['moving_average']
+        if 'lambda_real' in kwargs:
+            lambda_real = kwargs['lambda_real']
+        else:
+            lambda_real = 0.0
 
         # set optimizer
         optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial)
+
+        print('Start training model ...')
+        print('Using {} data points for training'.format(self.inv_train.shape[0]))
 
         if lr_scheduler is None:
             pass
@@ -292,6 +368,7 @@ class TBNNModel:
         initial_b = self.b_train[perm[0:batch_size]]
         initial_pred, _ = self.net(initial_inv, initial_T)
         self.loss_vector = self.loss_fn(initial_pred, initial_b).detach().numpy()
+        last_val_loss_avg = 100.
 
         # initialize validation loss
         b_val_pred, _ = self.net(self.inv_val, self.T_val)
@@ -315,8 +392,28 @@ class TBNNModel:
                 # Forward pass
                 b_pred, _ = self.net(inv_batch, T_batch)
 
+                # # check if realizability constraints are violated
+                # tensor = b_pred.reshape(-1, 3, 3)
+                # diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
+                # labels = (diag_min < th.tensor(-1. / 3.))
+                #
+                # # b_ii > -1/3
+                # loss_bii = (nn.ReLU()(th.tensor(-1. / 3.) - diag_min))
+                #
+                # # 2*|b_ij| < b_ii + b_jj + 2/3
+                # loss_b12 = nn.ReLU()(2 * th.abs(tensor[:, 0, 1]) - (tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.))
+                # loss_b23 = nn.ReLU()(2 * th.abs(tensor[:, 1, 2]) - (tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.))
+                # loss_b13 = nn.ReLU()(2 * th.abs(tensor[:, 0, 2]) - (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.))
+                # # loss_realizability = th.sum(loss_bii + loss_b12 + loss_b23 + loss_b13)
+                #
+                # eigval, eigvec = th.symeig(tensor, eigenvectors=True)
+                # loss_e1 = nn.ReLU()((3 * th.abs(eigval[:, 1]) - eigval[:, 1]) * .5 - eigval[:, 2])
+                # loss_e2 = nn.ReLU()(eigval[:, 2] - (1. / 3. - eigval[:, 1]))
+                # # loss_realizability_old = th.sum(loss_e2)
+                loss_real_train = loss_realizability(b_pred)
+
                 # compute and print loss
-                loss = self.loss_fn(b_pred, b_batch)  # + L2loss(lmbda, net)
+                loss = self.loss_fn(b_pred, b_batch) + weight_decay*self.l2loss() + lambda_real*loss_real_train
 
                 # reset gradient buffer
                 optimizer.zero_grad()
@@ -332,16 +429,37 @@ class TBNNModel:
 
             # compute validation error
             b_val_pred, _ = self.net(self.inv_val, self.T_val)
-            self.val_loss_vector = np.append(self.val_loss_vector, self.loss_fn(b_val_pred, self.b_val).detach().numpy())
-
+            # loss_val = (self.loss_fn(b_val_pred, self.b_val)
+            #             + self.l2loss(weight_decay)
+            #             + loss_realizability(b_val_pred))
+            self.val_loss_vector = np.append(self.val_loss_vector,
+                                             self.loss_fn(b_val_pred,self.b_val).detach().numpy())
+            # self.val_loss_vector = np.append(self.val_loss_vector, loss_val.detach().numpy())
             # output optimization state
             if epoch % 20 == 0:
-                print('Epoch: {}, Training loss: {:.6f}, Validation loss {:.6f}'.format(epoch, loss.item(),
-                                                                                        self.val_loss_vector[-1]))
+                print('Epoch: {}\n'.format(epoch),
+                      'Training loss:              {:.6e}\n'.format(loss.item()),
+                      'Validation loss:            {:.6e}\n'.format(self.val_loss_vector[-1]),
+                      'l2 loss:                    {:.6e}\n'.format(self.l2loss()),
+                      'Realizability loss (train): {:.6e}\n'.format(loss_real_train),
+                      'Realizability loss (val):   {:.6e}\n'.format(loss_realizability(b_val_pred)))
+                # check if learning rate should be updated
                 if lr_scheduler is None:
                     pass
                 else:
                     print(scheduler.state_dict()['_last_lr'])
+
+            # check if moving average decreased
+            if (epoch > 100) & (epoch % 10 == 0) & kwargs['early_stopping']:
+                this_val_loss_avg = np.sum(self.val_loss_vector[-moving_average:])/moving_average
+                if this_val_loss_avg > last_val_loss_avg:
+                    print('Validation loss moving average increased!')
+                    print('Preliminary stop the optimization at epoch {}'.format(epoch))
+                    print('Last validation loss average: {}'.format(last_val_loss_avg))
+                    print('This validation loss average: {}'.format(this_val_loss_avg))
+                    break
+                else:
+                    last_val_loss_avg = this_val_loss_avg
 
             # scheduler step
             if lr_scheduler is None:
