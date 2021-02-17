@@ -13,10 +13,11 @@ if __name__ == '__main__':
     # training_cases = [['5600']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
 
-    weight_decay = 10. ** th.linspace(-14, 0, 8)
+    # weight_decay = 10. ** th.linspace(4, 10, 4)
+    weight_decay = [100.0]
     print(weight_decay)
 
-    weight_decay = [0.0]
+    # weight_decay = [0.0]
     for weight_decay_ in weight_decay:
 
         geneva_architecture = [5, 200, 200, 200, 40, 20, 10]
@@ -24,23 +25,25 @@ if __name__ == '__main__':
         layers = ling_architecture
         model = TensorBasedNN.TBNNModel(layersizes=layers,
                                         activation=nn.LeakyReLU(),
-                                        final_layer_activation=th.nn.Identity())  # th.tanh usually used
+                                        final_layer_activation=nn.Tanh())
+        # nn.LeakyReLU() usually used for activation, th.tanh usually used for final layer
 
         # # if pretrained model should be used
         # model.net = th.load(model_path)
 
         # save_model_path = './storage/models/kaandorp_data/ph_cdc/l2_regularization_1000ep_1000_bs/{:.0e}'.format(weight_decay_)
-        save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/linear_output'
-        # save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/weight_decay_early_stopping/{:.0e}'.format(weight_decay_)
+        # save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/tanh_activation/1000_epochs'
+        base_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/with_real_loss_no_early_stopping/'
+        save_model_path = os.sep.join([base_path,'{:.0e}_linear_final'.format(weight_decay_)])
         if not os.path.exists(save_model_path):
             os.makedirs(save_model_path)
 
         assert os.path.exists(save_model_path), 'path to save model not specified'
         save_model = True
 
-        # # print net modules
-        # for m in model.net.modules():
-        #     print(m)
+        # print net modules
+        for m in model.net.modules():
+            print(m)
 
         model.load_data(training_dirs, training_cases, n_samples=10000)
         model.normalize_features(cap=2.)
@@ -61,8 +64,8 @@ if __name__ == '__main__':
 
         # parameters for model training
         training_params = {'lr_initial': 2.5e-5, 'n_epochs': 1000, 'batch_size': batch_size,
-                           'early_stopping': True, 'moving_average': 5, 'lr_scheduler': None,
-                           'weight_decay': weight_decay_, 'lambda_real': 0.0}
+                           'early_stopping': False, 'moving_average': 5, 'lr_scheduler': None,
+                           'weight_decay': 0.0, 'lambda_real': weight_decay_}
 
         model.train_model(**training_params)
         # model.train_model(lr_initial=2.5e-5,

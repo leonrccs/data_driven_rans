@@ -147,7 +147,7 @@ class TBNN_generic(nn.Module, ABC):
 def loss_realizability(tensor):
 
     # reshape tensor
-    tensor = tensor.reshape(-1, 3 ,3)
+    tensor = tensor.reshape(-1, 3, 3)
 
     diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
     labels = (diag_min < th.tensor(-1. / 3.))
@@ -440,9 +440,9 @@ class TBNNModel:
                 print('Epoch: {}\n'.format(epoch),
                       'Training loss:              {:.6e}\n'.format(loss.item()),
                       'Validation loss:            {:.6e}\n'.format(self.val_loss_vector[-1]),
-                      'l2 loss:                    {:.6e}\n'.format(self.l2loss()),
-                      'Realizability loss (train): {:.6e}\n'.format(loss_real_train),
-                      'Realizability loss (val):   {:.6e}\n'.format(loss_realizability(b_val_pred)))
+                      'l2 loss:                    {:.6e}\n'.format(weight_decay*self.l2loss()),
+                      'Realizability loss (train): {:.6e}\n'.format(lambda_real*loss_realizability(b_pred)),
+                      'Realizability loss (val):   {:.6e}\n'.format(loss_realizability(lambda_real*b_val_pred)))
                 # check if learning rate should be updated
                 if lr_scheduler is None:
                     pass
@@ -450,7 +450,7 @@ class TBNNModel:
                     print(scheduler.state_dict()['_last_lr'])
 
             # check if moving average decreased
-            if (epoch > 100) & (epoch % 10 == 0) & kwargs['early_stopping']:
+            if (epoch > 500) & (epoch % 10 == 0) & kwargs['early_stopping']:
                 this_val_loss_avg = np.sum(self.val_loss_vector[-moving_average:])/moving_average
                 if this_val_loss_avg > last_val_loss_avg:
                     print('Validation loss moving average increased!')
