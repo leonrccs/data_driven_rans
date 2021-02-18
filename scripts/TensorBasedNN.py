@@ -319,26 +319,51 @@ class TBNNModel:
                 reg += m.weight.norm()
         return reg
 
-    # def train_model(self, lr_initial, n_epochs=500, batch_size=20, lr_scheduler=None, weight_decay=0.0, **kwargs):
     def train_model(self, **kwargs):
         """
         train the model. inputs learning_rate and epochs must be given. batch_size is optional and is 20 by default
         training data set must be adjusted to new batch_size
-        :param weight_decay: (float) l2 regularization parameter
-        :param lr_scheduler: (bool) set to true if lr scheduler should be used. False by default
-        :param lr_initial: (float) initial learning rate of the optimization
-        :param n_epochs: (int) number of epochs for training
-        :param batch_size: (int) batch size for each optimization step
+        :param kwargs: set parameters for training process.
+        Valid keywords are:
+            lr_initial,
+            n_epochs,
+            batch_size,
+            weight_decay,
+            moving_average,
+            lambda_real,
+            lr_scheduler,
+            lr_scheduler_dict
         """
 
         print(kwargs)
+        for key in kwargs:
+            print('{:<12} {:<20}'.format('Parameter:', key))
+            print('{:<12}     {}'.format('    Value:', kwargs[key]))
 
-        lr_initial = kwargs['lr_initial']
-        n_epochs = kwargs['n_epochs']
-        batch_size = kwargs['batch_size']
-        lr_scheduler = kwargs['lr_scheduler']
-        weight_decay = kwargs['weight_decay']
-        moving_average = kwargs['moving_average']
+        if 'lr_initial' in kwargs:
+            lr_initial = kwargs['lr_initial']
+        else:
+            lr_initial = 2.5e-5
+
+        if 'n_epochs' in kwargs:
+            n_epochs = kwargs['n_epochs']
+        else:
+            n_epochs = 500
+
+        if 'batch_size' in kwargs:
+            batch_size = kwargs['batch_size']
+        else:
+            batch_size = 100
+
+        if 'weight_decay' in kwargs:
+            weight_decay = kwargs['weight_decay']
+        else:
+            weight_decay = 0.0
+
+        if 'moving_average' in kwargs:
+            moving_average = kwargs['moving_average']
+        else:
+            moving_average = 5
         if 'lambda_real' in kwargs:
             lambda_real = kwargs['lambda_real']
         else:
@@ -347,19 +372,16 @@ class TBNNModel:
         # set optimizer
         optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial)
 
+        # set learning rate scheduler if defined in param dict
+        if 'lr_scheduler' in kwargs:
+            scheduler = kwargs['lr_scheduler'](optimizer, **kwargs['lr_scheduler_dict'])
+            print('Using learning rate scheduler with parameters:')
+            print(scheduler.state_dict())
+        else:
+            scheduler = None
+
         print('Start training model ...')
         print('Using {} data points for training'.format(self.inv_train.shape[0]))
-
-        if lr_scheduler is None:
-            pass
-        else:
-            scheduler = lr_scheduler(optimizer, **kwargs)
-            # print(kwargs)
-            print(scheduler.state_dict())
-
-            # scheduler = th.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.75, patience=3,
-            #                                                     verbose=True, threshold=0.05, threshold_mode='rel',
-            #                                                     cooldown=5, min_lr=min_lr, eps=1e-07)
 
         # initialize training loss
         perm = np.random.permutation(self.inv_train.shape[0])
@@ -392,24 +414,7 @@ class TBNNModel:
                 # Forward pass
                 b_pred, _ = self.net(inv_batch, T_batch)
 
-                # # check if realizability constraints are violated
-                # tensor = b_pred.reshape(-1, 3, 3)
-                # diag_min = th.min(tensor[:, [0, 1, 2], [0, 1, 2]], 1)[0].unsqueeze(1)
-                # labels = (diag_min < th.tensor(-1. / 3.))
-                #
-                # # b_ii > -1/3
-                # loss_bii = (nn.ReLU()(th.tensor(-1. / 3.) - diag_min))
-                #
-                # # 2*|b_ij| < b_ii + b_jj + 2/3
-                # loss_b12 = nn.ReLU()(2 * th.abs(tensor[:, 0, 1]) - (tensor[:, 0, 0] + tensor[:, 1, 1] + 2. / 3.))
-                # loss_b23 = nn.ReLU()(2 * th.abs(tensor[:, 1, 2]) - (tensor[:, 1, 1] + tensor[:, 2, 2] + 2. / 3.))
-                # loss_b13 = nn.ReLU()(2 * th.abs(tensor[:, 0, 2]) - (tensor[:, 0, 0] + tensor[:, 2, 2] + 2. / 3.))
-                # # loss_realizability = th.sum(loss_bii + loss_b12 + loss_b23 + loss_b13)
-                #
-                # eigval, eigvec = th.symeig(tensor, eigenvectors=True)
-                # loss_e1 = nn.ReLU()((3 * th.abs(eigval[:, 1]) - eigval[:, 1]) * .5 - eigval[:, 2])
-                # loss_e2 = nn.ReLU()(eigval[:, 2] - (1. / 3. - eigval[:, 1]))
-                # # loss_realizability_old = th.sum(loss_e2)
+                # compute violation constraint
                 loss_real_train = loss_realizability(b_pred)
 
                 # compute and print loss
@@ -444,7 +449,7 @@ class TBNNModel:
                       'Realizability loss (train): {:.6e}\n'.format(lambda_real*loss_realizability(b_pred)),
                       'Realizability loss (val):   {:.6e}\n'.format(loss_realizability(lambda_real*b_val_pred)))
                 # check if learning rate should be updated
-                if lr_scheduler is None:
+                if scheduler is None:
                     pass
                 else:
                     print(scheduler.state_dict()['_last_lr'])
@@ -462,7 +467,7 @@ class TBNNModel:
                     last_val_loss_avg = this_val_loss_avg
 
             # scheduler step
-            if lr_scheduler is None:
+            if scheduler is None:
                 pass
             elif 'step_arg' in kwargs:
                 scheduler.step(self.val_loss_vector[-1])

@@ -13,8 +13,8 @@ if __name__ == '__main__':
     # training_cases = [['5600']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
 
-    # weight_decay = 10. ** th.linspace(4, 10, 4)
-    weight_decay = [100.0]
+    weight_decay = 10. ** th.linspace(2, 10, 5)
+    # weight_decay = [100.0]
     print(weight_decay)
 
     # weight_decay = [0.0]
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         # save_model_path = './storage/models/kaandorp_data/ph_cdc/l2_regularization_1000ep_1000_bs/{:.0e}'.format(weight_decay_)
         # save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/tanh_activation/1000_epochs'
         base_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/with_real_loss_no_early_stopping/'
-        save_model_path = os.sep.join([base_path,'{:.0e}_linear_final'.format(weight_decay_)])
+        save_model_path = os.sep.join([base_path,'{:.0e}_rerun'.format(weight_decay_)])
         if not os.path.exists(save_model_path):
             os.makedirs(save_model_path)
 
@@ -57,15 +57,16 @@ if __name__ == '__main__':
         # lr_scheduler_opt = {'mode': 'min', 'factor': 0.75, 'patience': 3, 'verbose': True,
         #                     'threshold': 0.05, 'threshold_mode': 'rel',
         #                     'cooldown': 5, 'min_lr': '2.5e-6', 'eps': 1e-07}
-        # lr_scheduler_ = th.optim.lr_scheduler.MultiStepLR
+        # lr_scheduler = th.optim.lr_scheduler.MultiStepLR
         # lr_scheduler_opt = {'milestones': [25, 50, 100, 200, 400, 700], 'gamma': .5, 'verbose': False}
         # model.train_model(lr_initial=0.00016, n_epochs=1000, batch_size=50,
         #                   lr_scheduler=lr_scheduler_, **lr_scheduler_opt)
 
         # parameters for model training
         training_params = {'lr_initial': 2.5e-5, 'n_epochs': 1000, 'batch_size': batch_size,
-                           'early_stopping': False, 'moving_average': 5, 'lr_scheduler': None,
+                           'early_stopping': False, 'moving_average': 5,
                            'weight_decay': 0.0, 'lambda_real': weight_decay_}
+                           # 'lr_scheduler': lr_scheduler, 'lr_scheduler_dict': lr_scheduler_opt}
 
         model.train_model(**training_params)
         # model.train_model(lr_initial=2.5e-5,
