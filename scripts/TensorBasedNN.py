@@ -196,22 +196,6 @@ class TBNNModel:
         self.n_val = 0
         self.batch_size = 20
 
-    # def load_data(self, parent_dir, child_dir):
-    #     """
-    #     Method to load data in the model  (training and validation)
-    #     :param parent_dir: (str) parent directory
-    #     :param child_dir: (str) list of strings which hold directories to loop through
-    #     """
-    #     for i, case in enumerate(child_dir):
-    #         curr_dir = os.sep.join([parent_dir, case])
-    #         self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
-    #         self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
-    #         self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
-    #         self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
-    #
-    #     self.n_total = self.inv.shape[0]
-    #     print('Successfully loaded {} data points'.format(self.n_total))
-
     def load_data(self, parent_dir, child_dir, n_samples=10000):
         """
         Method to load data in the model  (training and validation)
@@ -252,19 +236,6 @@ class TBNNModel:
 
         self.n_total = self.inv.shape[0]
         print('Successfully loaded {} data points'.format(self.n_total))
-
-        # earlier implementation
-        # for i, directory in enumerate(parent_dir):
-        #     inv = th.tensor([])
-        #     for _, case in enumerate(child_dir[i]):
-        #         curr_dir = os.sep.join([directory, case])
-        #         self.inv = th.cat((self.inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
-        #         self.T = th.cat((self.T, th.load(os.sep.join([curr_dir, 'T-torch.th'])).flatten(2)))
-        #         self.b = th.cat((self.b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
-        #         self.grid = th.cat((self.grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
-        #
-        # self.n_total = self.inv.shape[0]
-        # print('Successfully loaded {} data points'.format(self.n_total))
 
     def normalize_features(self, cap=2.0):
         """
@@ -319,6 +290,19 @@ class TBNNModel:
                 reg += m.weight.norm()
         return reg
 
+    def loss_function(self, method):
+
+        def mse_b_full(a, b):
+            return nn.MSELoss()(a, b)
+
+        def mse_b_unique(a, b):
+            return nn.MSELoss()(a[:, [0, 1, 2, 4, 5, 8]], b[:, [0, 1, 2, 4, 5, 8]])
+
+        if method == 'b_full':
+            return mse_b_full
+        if method == 'b_unique':
+            return mse_b_unique
+
     def train_model(self, **kwargs):
         """
         train the model. inputs learning_rate and epochs must be given. batch_size is optional and is 20 by default
@@ -335,11 +319,12 @@ class TBNNModel:
             lr_scheduler_dict
         """
 
-        print(kwargs)
+        # print the training parameters
         for key in kwargs:
             print('{:<12} {:<20}'.format('Parameter:', key))
             print('{:<12}     {}'.format('    Value:', kwargs[key]))
 
+        # read the training parameters from parameter dict
         if 'lr_initial' in kwargs:
             lr_initial = kwargs['lr_initial']
         else:
@@ -369,6 +354,11 @@ class TBNNModel:
         else:
             lambda_real = 0.0
 
+        if 'error_method' in kwargs:
+            error_method = kwargs['error_method']
+        else:
+            error_method = 'b_full'
+
         # set optimizer
         optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial)
 
@@ -386,9 +376,9 @@ class TBNNModel:
         # initialize training loss
         perm = np.random.permutation(self.inv_train.shape[0])
         initial_inv = self.inv_train[perm[0:batch_size]]
-        initial_T = self.T_train[perm[0:batch_size]]
+        initial_t = self.T_train[perm[0:batch_size]]
         initial_b = self.b_train[perm[0:batch_size]]
-        initial_pred, _ = self.net(initial_inv, initial_T)
+        initial_pred, _ = self.net(initial_inv, initial_t)
         self.loss_vector = self.loss_fn(initial_pred, initial_b).detach().numpy()
         last_val_loss_avg = 100.
 
@@ -408,17 +398,21 @@ class TBNNModel:
                 # get batch data
                 idx = perm[np.arange(it, it + batch_size)]
                 inv_batch = self.inv_train[idx, :]
-                T_batch = self.T_train[idx, :, :]
+                t_batch = self.T_train[idx, :, :]
                 b_batch = self.b_train[idx, :]
 
                 # Forward pass
-                b_pred, _ = self.net(inv_batch, T_batch)
+                b_pred, _ = self.net(inv_batch, t_batch)
 
                 # compute violation constraint
                 loss_real_train = loss_realizability(b_pred)
 
                 # compute and print loss
-                loss = self.loss_fn(b_pred, b_batch) + weight_decay*self.l2loss() + lambda_real*loss_real_train
+                # loss = self.loss_fn(b_pred, b_batch) + weight_decay*self.l2loss() + lambda_real*loss_real_train
+                loss = self.loss_function(error_method)(b_pred, b_batch)
+
+                # print('b_unique: {}'.format(self.loss_function(error_method)(b_pred, b_batch)))
+                # print('b_full:   {}'.format(self.loss_function('b_full')(b_pred, b_batch)))
 
                 # reset gradient buffer
                 optimizer.zero_grad()

@@ -13,11 +13,10 @@ if __name__ == '__main__':
     # training_cases = [['5600']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
 
-    weight_decay = 10. ** th.linspace(2, 10, 5)
-    # weight_decay = [100.0]
+    # weight_decay = 10. ** th.linspace(2, 10, 5)
+    weight_decay = [0.0]
     print(weight_decay)
 
-    # weight_decay = [0.0]
     for weight_decay_ in weight_decay:
 
         geneva_architecture = [5, 200, 200, 200, 40, 20, 10]
@@ -33,8 +32,9 @@ if __name__ == '__main__':
 
         # save_model_path = './storage/models/kaandorp_data/ph_cdc/l2_regularization_1000ep_1000_bs/{:.0e}'.format(weight_decay_)
         # save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/tanh_activation/1000_epochs'
-        base_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/with_real_loss_no_early_stopping/'
-        save_model_path = os.sep.join([base_path,'{:.0e}_rerun'.format(weight_decay_)])
+        base_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/loss_b_unique'
+        # save_model_path = os.sep.join([base_path,'{:.0e}_rerun'.format(weight_decay_)])
+        save_model_path = base_path
         if not os.path.exists(save_model_path):
             os.makedirs(save_model_path)
 
@@ -64,8 +64,9 @@ if __name__ == '__main__':
 
         # parameters for model training
         training_params = {'lr_initial': 2.5e-5, 'n_epochs': 1000, 'batch_size': batch_size,
-                           'early_stopping': False, 'moving_average': 5,
-                           'weight_decay': 0.0, 'lambda_real': weight_decay_}
+                           'early_stopping': True, 'moving_average': 5,
+                           'weight_decay': 0.0, 'lambda_real': weight_decay_,
+                           'error_method': 'b_unique'}
                            # 'lr_scheduler': lr_scheduler, 'lr_scheduler_dict': lr_scheduler_opt}
 
         model.train_model(**training_params)
