@@ -20,7 +20,6 @@ def sigmoid_scaling(tensor):
 
 
 def mean_std_scaling(tensor, cap=2., mu=None, std=None):
-
     if (mu is None) & (std is None):
         rescale = True
 
@@ -55,22 +54,22 @@ def cap_tensor(tensor, cap):
     return tensor
 
 
-def get_invariants(s0, r0):
+def get_invariants(s, r):
     """function for computation of tensor basis
         Inputs:
-            s0: N x 3 x 3 (N is number of data points)
-            r0: N x 3 x 3
+            s: N x 3 x 3 (N is number of data points)
+            r: N x 3 x 3
         Outputs:
-            invar_sig : N x 5 (5 is number of scalar invariants)
+            invar : N x 5 (5 is number of scalar invariants)
     """
 
-    nCells = s0.size()[0]
+    nCells = s.size()[0]
     invar = th.zeros(nCells, 5).type(dtype)
 
-    s2 = s0.bmm(s0)
-    r2 = r0.bmm(r0)
-    s3 = s2.bmm(s0)
-    r2s = r2.bmm(s0)
+    s2 = s.bmm(s)
+    r2 = r.bmm(r)
+    s3 = s2.bmm(s)
+    r2s = r2.bmm(s)
     r2s2 = r2.bmm(s2)
 
     invar[:, 0] = (s2[:, 0, 0] + s2[:, 1, 1] + s2[:, 2, 2])  # Tr(s2)
@@ -82,41 +81,146 @@ def get_invariants(s0, r0):
     return invar
 
 
-def get_tensor_functions(s0, r0):
-    """function for computation of tensor basis
+def get_invariants_fs2(s, r, grad_k):
+    """
+    function to compute additional invariants from Wang et al. (2018)
+    :param s: normalized mean rate of strain (N x 3 x 3)
+    :param r: normalized mean rate of rotation (N x 3 x 3)
+    :param grad_k: normalized turbulent kinetic energy gradient (N x 3)
+    :return: invar_fs2: invariants from feature set 2 (N x 13)
+    """
+
+    inv = th.zeros(s.shape[0], 13).type(dtype)
+    ak = th.zeros_like(s).type(dtype)
+    identity = th.eye(3).unsqueeze(0).expand(s.shape).type(dtype)
+
+    for i in range(3):
+        ak[:, :, i] = -th.cross(identity[:, :, i], grad_k)
+
+    inv[:, 0] = (ak.matmul(ak))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 1] = (ak.matmul(ak).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 2] = (ak.matmul(ak).matmul(s).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 3] = (ak.matmul(ak).matmul(s).matmul(ak).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 4] = (r.matmul(ak))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 5] = (r.matmul(ak).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 6] = (r.matmul(ak).matmul(s).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 7] = (r.matmul(r).matmul(ak).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 8] = (ak.matmul(ak).matmul(r).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 9] = (r.matmul(r).matmul(ak).matmul(s).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 10] = (ak.matmul(ak).matmul(r).matmul(s).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 11] = (r.matmul(r).matmul(s).matmul(ak).matmul(s).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv[:, 12] = (ak.matmul(ak).matmul(s).matmul(r).matmul(s).matmul(s))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+
+    return inv
+
+
+def get_invariants_fs3(s, r, rs, u, grad_u, grad_p, k, epsilon, d, nu):
+    """
+    function to compute additional invariants from Wang et al. (2017)
+    :param s: mean rate of strain (N x 3 x 3)
+    :param r: mean rate of roatation (N x 3 x 3)
+    :param rs: reynolds stresses (N x 3 x 3)
+    :param u: velocity (N x 3)
+    :param grad_u: velocity gradient (N x 3 x 3)
+    :param grad_p: pressure gradient (N x 3)
+    :param k: turbulent kinetic energy (N)
+    :param epsilon: energy dissipation rate (N)
+    :param d: wall distance (N)
+    :param nu: kinematic viscosity (scalar)
+    :return: invariants: feature set 3 invariants (N x 9)
+    """
+
+    # initialize invariants
+    inv = th.zeros(s.shape[0], 9).type(dtype)
+
+    # compute s_hat, r_hat
+    s_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * s
+    r_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * r
+
+    # ration of excess rotation rate to strain rate
+    sst = s_hat.matmul(s_hat.transpose(1, 2))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    rrt = r_hat.matmul(r_hat.transpose(1, 2))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)
+    inv_raw = 0.5 * (rrt - sst)
+    norm = sst
+    inv[:, 0] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # turbulent intensity
+    inv_raw = k
+    norm = (0.5 * th.einsum('ij,ij->i', u, u))
+    inv[:, 1] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # wall-distance based Reynolds number, no norm!
+    inv[:, 2] = th.min((th.sqrt(k)*d)/(50*nu), th.tensor(2.0))
+
+    # pressure gradient along a streamline
+    inv_raw = th.einsum('ij,ij->i', u, grad_p)
+    norm = th.sqrt(th.einsum('ij,ij->i', grad_p, grad_p) * th.einsum('ij,ij->i', u, u))
+    inv[:, 3] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # ration of turbulent time scale to mean strain time scale
+    inv_raw = k/epsilon
+    norm = 1/(th.sqrt(sst))
+    inv[:, 4] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # # ratio of pressure normal stresses to shear stresses
+    inv_raw = th.sqrt(th.einsum('ij,ij->i', grad_p, grad_p))
+    norm = 0.5 * th.einsum('ijj,ij->i', grad_u, u)
+    inv[:, 5] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # ratio of convection to production of TKE
+    inv_raw = th.einsum('ij,ij->i', u, grad_k)
+    norm = th.einsum('ijk,ijk->i', rs, s)
+    inv[:, 6] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # ratio of total to normal Reynolds stresses
+    inv_raw = th.sqrt(th.einsum('ijk, ijk -> i', rs, rs))
+    norm = k
+    inv[:, 7] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    # non-orthogonality between velocity and its gradient
+    inv_raw = th.abs(th.einsum('ij, ik, ijk -> i', u, u, grad_u))
+    norm = th.sqrt(th.einsum('ij,ij,ik,ikl,im,iml -> i', u, u, u, grad_u, u, grad_u))
+    inv[:, 8] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
+
+    return inv
+
+
+def get_tensor_functions(s, r):
+    """
+    function for computation of tensor basis
         Inputs:
-            s0: N x 3 x 3 (N is number of datapoints)
-            r0: N x 3 x 3
+            s: N x 3 x 3 (N is number of datapoints)
+            r: N x 3 x 3
         Outputs:
             T : N x 10 x 3 x 3 (10 is number of basis tensors)
     """
 
-    nCells = s0.size()[0]
-    T = th.zeros(nCells, 10, 3, 3).type(dtype)
+    nCells = s.size()[0]
+    t = th.zeros(nCells, 10, 3, 3).type(dtype)
 
-    s2 = s0.bmm(s0)
-    r2 = r0.bmm(r0)
-    sr = s0.bmm(r0)
-    rs = r0.bmm(s0)
+    s2 = s.bmm(s)
+    r2 = r.bmm(r)
+    sr = s.bmm(r)
+    rs = r.bmm(s)
 
-    T[:, 0] = s0
-    T[:, 1] = sr - rs
-    T[:, 2] = s2 - (1.0 / 3.0) * th.eye(3).type(dtype) \
+    t[:, 0] = s
+    t[:, 1] = sr - rs
+    t[:, 2] = s2 - (1.0 / 3.0) * th.eye(3).type(dtype) \
               * (s2[:, 0, 0] + s2[:, 1, 1] + s2[:, 2, 2]).unsqueeze(1).unsqueeze(1)
-    T[:, 3] = r2 - (1.0 / 3.0) * th.eye(3).type(dtype) \
+    t[:, 3] = r2 - (1.0 / 3.0) * th.eye(3).type(dtype) \
               * (r2[:, 0, 0] + r2[:, 1, 1] + r2[:, 2, 2]).unsqueeze(1).unsqueeze(1)
-    T[:, 4] = r0.bmm(s2) - s2.bmm(r0)
-    t0 = s0.bmm(r2)
-    T[:, 5] = r2.bmm(s0) + s0.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
+    t[:, 4] = r.bmm(s2) - s2.bmm(r)
+    t0 = s.bmm(r2)
+    t[:, 5] = r2.bmm(s) + s.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
               * (t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
-    T[:, 6] = rs.bmm(r2) - r2.bmm(sr)
-    T[:, 7] = sr.bmm(s2) - s2.bmm(rs)
+    t[:, 6] = rs.bmm(r2) - r2.bmm(sr)
+    t[:, 7] = sr.bmm(s2) - s2.bmm(rs)
     t0 = s2.bmm(r2)
-    T[:, 8] = r2.bmm(s2) + s2.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
+    t[:, 8] = r2.bmm(s2) + s2.bmm(r2) - (2.0 / 3.0) * th.eye(3).type(dtype) \
               * (t0[:, 0, 0] + t0[:, 1, 1] + t0[:, 2, 2]).unsqueeze(1).unsqueeze(1)
-    T[:, 9] = r0.bmm(s2).bmm(r2) - r2.bmm(s2).bmm(r0)
+    t[:, 9] = r.bmm(s2).bmm(r2) - r2.bmm(s2).bmm(r)
 
-    return T
+    return t
 
 
 def ph_interp(x_new):
@@ -372,9 +476,8 @@ def load_standardized_data(data):
 
             # correct invariants of cases with symmetries
             if data['correctInvariants']:
-                if case != 'SquareDuct':
-                    print('Setting invariants 3 and 4 to 0 ...')
-                    inv[:, [2, 3]] = 0.0
+                print('Setting invariants 3 and 4 to 0 ...')
+                inv[:, [2, 3]] = 0.0
 
             # scale invariants
             # inv = mean_std_scaling(inv)
@@ -432,6 +535,9 @@ def load_standardized_data(data):
     return 0
 
 
+
+
+
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
@@ -472,47 +578,60 @@ if __name__ == '__main__':
     data['removeNan'] = True
     data['correctInvariants'] = True
 
-    load_standardized_data(data)
+    # load_standardized_data(data)
 
     # inv = th.load('/home/leonriccius/Documents/Fluid_Data/tensordata_unscaled_inv_corr/PeriodicHills/2800/inv-torch.th')
 
+    rans_path = '/home/leonriccius/Documents/Fluid_Data/rans_kaandorp/PeriodicHills/Re10595_kOmega_150'
+    rans_time = '30000'
 
+    u = pre.readVectorData(rans_time, 'U', rans_path)
+    grid = pre.readCellCenters(rans_time, rans_path)
+    rs = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', rans_path).reshape(-1, 3, 3)
+    grad_u = pre.readTensorData(rans_time, 'grad(U)', rans_path)
+    grad_k = pre.readVectorData(rans_time, 'grad(k)', rans_path)
+    grad_p = pre.readVectorData(rans_time, 'grad(p)', rans_path)
+    yWall = pre.readScalarData(rans_time, 'yWall', rans_path)
+    k = pre.readScalarData(rans_time, 'k', rans_path)
+    omega = pre.readScalarData(rans_time, 'omega', rans_path)  # 'epsilon' or 'omega'
+    epsilon = omega * k * 0.09  # 0.09 is beta star
+    nu = 9.438414346389807e-05
 
+    # calculate mean rate of strain and rotation tensors
+    s = 0.5 * (grad_u + grad_u.transpose(1, 2))
+    r = 0.5 * (grad_u - grad_u.transpose(1, 2))
 
-    # path = '/home/leonriccius/Documents/Fluid_Data/tensordata/SquareDuct/1800'
-    # u = th.load(os.sep.join([path, 'u_rans-torch.th']))
-    # inv = th.load(os.sep.join([path, 'inv-torch.th']))
-    # grid = th.load(os.sep.join([path, 'grid-torch.th']))
-    # b = th.load(os.sep.join([path, 'b_rans-torch.th']))
+    # normalize s and r
+    s_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * s
+    r_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * r
+    grad_k_hat = (th.sqrt(k) / epsilon).unsqueeze(1) * grad_k
+
+    inv = get_invariants_fs3(s, r, rs, u, grad_u, grad_p, k, epsilon, yWall, nu)
+
+    import matplotlib
+
+    cmap = matplotlib.cm.get_cmap("coolwarm")
+
+    i = 0
+    inv_min = th.min(inv[:, i])
+    inv_max = th.max(inv[:, i])
+    levels = np.linspace(inv_min, inv_max, 50)
+    fig, ax = plt.subplots(figsize=(9, 3))
+    plot = ax.tricontourf(grid[:, 0], grid[:, 1], inv[:, i], cmap=cmap, levels=levels)
+    ax.set_title('Inv {}'.format(i + 1))
+    fig.colorbar(plot)
+    fig.show()
+
+    # import matplotlib
     #
-    # fig, ax = plt.subplots()
-    # ax.axis('equal')
-    # plot = ax.tricontourf(grid[:, 1], grid[:, 2], b[:, 0, 0])
-    # fig.colorbar(plot)
-    # fig.show()
-
-
-    # data['flowCase'] = ['PeriodicHills',
-    #                     # 'ConvDivChannel',
-    #                     'CurvedBackwardFacingStep',
-    #                     'SquareDuct']
-    # data['Re'] = [['700', '1400', '2800', '5600', '10595'],
-    #               # ['12600', '7900'],
-    #               ['13700'],
-    #               ['1800']]
-    # data['nx'] = [[140, 140, 140, 140, 140],
-    #               # [140, 140],
-    #               [140],
-    #               [50]]
-    # data['ny'] = [[150, 150, 150, 150, 150],
-    #               # [100, 100],
-    #               [150],
-    #               [50]]
-    # data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
-    #                  # ['kOmega', 'kOmega'],
-    #                  ['kOmega'],
-    #                  ['kOmega']]
-    # data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
-    #                     # ['7000', '7000'],
-    #                     ['3000'],
-    #                     ['40000']]
+    # cmap = matplotlib.cm.get_cmap("coolwarm")
+    #
+    # for i in range(13):
+    #     inv_min = th.min(inv_2[:, i])
+    #     inv_max = th.max(inv_2[:, i])
+    #     levels = np.linspace(inv_min, inv_max, 50)
+    #     fig, ax = plt.subplots(figsize=(9, 3))
+    #     plot = ax.tricontourf(grid[:, 0], grid[:, 1], inv_2[:, i], cmap=cmap, levels=levels)
+    #     ax.set_title('Inv {}'.format(i+1))
+    #     fig.colorbar(plot)
+    #     fig.show()
