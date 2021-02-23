@@ -114,7 +114,7 @@ def get_invariants_fs2(s, r, grad_k):
     return inv
 
 
-def get_invariants_fs3(s, r, rs, u, grad_u, grad_p, k, epsilon, d, nu):
+def get_invariants_fs3(s, r, rs, u, grad_u, grad_p, grad_k, k, epsilon, d, nu):
     """
     function to compute additional invariants from Wang et al. (2017)
     :param s: mean rate of strain (N x 3 x 3)
@@ -123,6 +123,7 @@ def get_invariants_fs3(s, r, rs, u, grad_u, grad_p, k, epsilon, d, nu):
     :param u: velocity (N x 3)
     :param grad_u: velocity gradient (N x 3 x 3)
     :param grad_p: pressure gradient (N x 3)
+    :param grad_k: turbulent kinetic energy gradient (N x 3)
     :param k: turbulent kinetic energy (N)
     :param epsilon: energy dissipation rate (N)
     :param d: wall distance (N)
@@ -159,7 +160,8 @@ def get_invariants_fs3(s, r, rs, u, grad_u, grad_p, k, epsilon, d, nu):
 
     # ration of turbulent time scale to mean strain time scale
     inv_raw = k/epsilon
-    norm = 1/(th.sqrt(sst))
+    # norm = 1/(th.sqrt(sst))
+    norm = 1/(th.sqrt(s.matmul(s.transpose(1, 2))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)))
     inv[:, 4] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
 
     # # ratio of pressure normal stresses to shear stresses
@@ -447,6 +449,8 @@ def load_standardized_data(data):
                 grad_u_rans = pre.readTensorData(rans_time, 'gradU', rans_path)  # or 'gradU
             else:
                 grad_u_rans = pre.readTensorData(rans_time, 'grad(U)', rans_path)
+            grad_k_rans = pre.readTensorData(rans_time, 'grad(k)', rans_path)
+            grad_p_rans = pre.readTensorData(rans_time, 'grad(p)', rans_path)
 
             # reading in epsilon, otherwise calculate from omega
             if os.path.isfile(os.sep.join([rans_path, rans_time, 'epsilon'])):
@@ -546,30 +550,14 @@ if __name__ == '__main__':
     data['dns'] = 'dns'
     data['rans'] = 'rans_kaandorp'
     data['target_dir'] = 'tensordata_unscaled_inv_corr'
-    data['flowCase'] = ['PeriodicHills',
-                        'ConvDivChannel',
-                        'CurvedBackwardFacingStep',
-                        'SquareDuct']
-    data['Re'] = [['700', '1400', '2800', '5600', '10595'],
-                  ['12600', '7900'],
-                  ['13700'],
-                  ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
-    data['nx'] = [[140, 140, 140, 140, 140],
-                  [140, 140],
-                  [140],
-                  [50, 50, 50, 50, 50, 50, 50]]
-    data['ny'] = [[150, 150, 150, 150, 150],
-                  [100, 100],
-                  [150],
-                  [50, 50, 50, 50, 50, 50, 50]]
-    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
-                     ['kOmega', 'kOmega'],
-                     ['kOmega'],
-                     ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
-    data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
-                        ['7000', '7000'],
-                        ['3000'],
-                        ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+    data['featureSets'] = ['FS1']  #, 'FS2', 'FS3']
+    data['excludeInvariants'] = [[3, 4]]
+    data['flowCase'] = ['PeriodicHills']
+    data['Re'] = [['10595']]
+    data['nx'] = [[140]]
+    data['ny'] = [[150]]
+    data['model'] = [['kOmega']]
+    data['ransTime'] = [['30000']]
 
     data['interpolationMethod'] = 'linear'
     data['enforceZeroTrace'] = True
@@ -582,6 +570,11 @@ if __name__ == '__main__':
 
     # inv = th.load('/home/leonriccius/Documents/Fluid_Data/tensordata_unscaled_inv_corr/PeriodicHills/2800/inv-torch.th')
 
+
+
+
+
+    # # for testing invariants
     rans_path = '/home/leonriccius/Documents/Fluid_Data/rans_kaandorp/PeriodicHills/Re10595_kOmega_150'
     rans_time = '30000'
 
@@ -606,13 +599,13 @@ if __name__ == '__main__':
     r_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * r
     grad_k_hat = (th.sqrt(k) / epsilon).unsqueeze(1) * grad_k
 
-    inv = get_invariants_fs3(s, r, rs, u, grad_u, grad_p, k, epsilon, yWall, nu)
+    inv = get_invariants_fs3(s, r, rs, u, grad_u, grad_p, grad_k, k, epsilon, yWall, nu)
 
     import matplotlib
 
     cmap = matplotlib.cm.get_cmap("coolwarm")
 
-    i = 0
+    i = 4
     inv_min = th.min(inv[:, i])
     inv_max = th.max(inv[:, i])
     levels = np.linspace(inv_min, inv_max, 50)
@@ -622,16 +615,41 @@ if __name__ == '__main__':
     fig.colorbar(plot)
     fig.show()
 
-    # import matplotlib
+    # data = {}
+    # data['home'] = '/home/leonriccius/Documents/Fluid_Data'
+    # data['dns'] = 'dns'
+    # data['rans'] = 'rans_kaandorp'
+    # data['target_dir'] = 'tensordata_unscaled_inv_corr'
+    # data['featureSets'] = ['FS1'] #, 'FS2', 'FS3']
+    # data['excludeInvariants'] = [[3, 4]]
+    # data['flowCase'] = ['PeriodicHills',
+    #                     'ConvDivChannel',
+    #                     'CurvedBackwardFacingStep',
+    #                     'SquareDuct']
+    # data['Re'] = [['700', '1400', '2800', '5600', '10595'],
+    #               ['12600', '7900'],
+    #               ['13700'],
+    #               ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+    # data['nx'] = [[140, 140, 140, 140, 140],
+    #               [140, 140],
+    #               [140],
+    #               [50, 50, 50, 50, 50, 50, 50]]
+    # data['ny'] = [[150, 150, 150, 150, 150],
+    #               [100, 100],
+    #               [150],
+    #               [50, 50, 50, 50, 50, 50, 50]]
+    # data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
+    #                  ['kOmega', 'kOmega'],
+    #                  ['kOmega'],
+    #                  ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+    # data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
+    #                     ['7000', '7000'],
+    #                     ['3000'],
+    #                     ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
     #
-    # cmap = matplotlib.cm.get_cmap("coolwarm")
-    #
-    # for i in range(13):
-    #     inv_min = th.min(inv_2[:, i])
-    #     inv_max = th.max(inv_2[:, i])
-    #     levels = np.linspace(inv_min, inv_max, 50)
-    #     fig, ax = plt.subplots(figsize=(9, 3))
-    #     plot = ax.tricontourf(grid[:, 0], grid[:, 1], inv_2[:, i], cmap=cmap, levels=levels)
-    #     ax.set_title('Inv {}'.format(i+1))
-    #     fig.colorbar(plot)
-    #     fig.show()
+    # data['interpolationMethod'] = 'linear'
+    # data['enforceZeroTrace'] = True
+    # data['capSandR'] = True
+    # data['saveTensors'] = True
+    # data['removeNan'] = True
+    # data['correctInvariants'] = True
