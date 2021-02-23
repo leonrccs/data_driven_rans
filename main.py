@@ -6,9 +6,9 @@ import random
 
 if __name__ == '__main__':
 
-    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata_unscaled_inv_corr'
+    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced'
     training_flow_geom = ['PeriodicHills', 'ConvDivChannel', 'SquareDuct']
-    training_cases = [['700', '1400', '5600', '10595'], ['12600'], ['2000', '3200']]
+    training_cases = [['2800', '10595'], ['12600'], ['2000', '3200']]
     # training_flow_geom = ['PeriodicHills']
     # training_cases = [['5600']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
@@ -19,8 +19,9 @@ if __name__ == '__main__':
 
     for weight_decay_ in weight_decay:
 
-        geneva_architecture = [5, 200, 200, 200, 40, 20, 10]
-        ling_architecture = [5, 30, 30, 30, 30, 30, 30, 30, 30, 10]
+        n_features = 17  # fs_1: 3,  fs_2: 5,  fs:3: 9
+        geneva_architecture = [n_features, 200, 200, 200, 40, 20, 10]
+        ling_architecture = [n_features, 30, 30, 30, 30, 30, 30, 30, 30, 10]
         layers = ling_architecture
         model = TensorBasedNN.TBNNModel(layersizes=layers,
                                         activation=nn.LeakyReLU(),
@@ -32,7 +33,7 @@ if __name__ == '__main__':
 
         # save_model_path = './storage/models/kaandorp_data/ph_cdc/l2_regularization_1000ep_1000_bs/{:.0e}'.format(weight_decay_)
         # save_model_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/tanh_activation/1000_epochs'
-        base_path = './storage/models/kaandorp_data/ph_cdc_sd/invariants_corrected/loss_b_unique'
+        base_path = './storage/models/kaandorp_data/ph_cdc_sd/additional_features/phill_2800_10595'
         # save_model_path = os.sep.join([base_path,'{:.0e}_rerun'.format(weight_decay_)])
         save_model_path = base_path
         if not os.path.exists(save_model_path):
@@ -45,7 +46,8 @@ if __name__ == '__main__':
         for m in model.net.modules():
             print(m)
 
-        model.load_data(training_dirs, training_cases, n_samples=10000)
+        features = ['FS1', 'FS2', 'FS3']
+        model.load_data(training_dirs, training_cases, features, n_samples=10000)
         model.normalize_features(cap=2.)
         batch_size = 100
         model.batch_size = batch_size  # need to specify it here because select train data needs it

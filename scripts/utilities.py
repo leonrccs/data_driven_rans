@@ -3,6 +3,7 @@ import torch as th
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.interpolate import griddata
+from scipy import ndimage
 import datetime
 import os
 import scripts.preProcess as pre
@@ -225,6 +226,28 @@ def get_tensor_functions(s, r):
     return t
 
 
+def filterField(inputData, std, filter_spatial='Gaussian'):
+    """
+    Filter a field (e.g. predicted b_ij) spatially using a gaussian or median filter
+    """
+    if len(inputData.shape) == 4:
+        outputData = np.zeros(inputData.shape)
+        for i1 in range(inputData.shape[0]):
+            for i2 in range(inputData.shape[1]):
+                if filter_spatial == 'Gaussian':
+                    outputData[i1, i2, :, :] = ndimage.gaussian_filter(inputData[i1, i2, :, :],
+                                                                       std, order=0, output=None, mode='nearest',
+                                                                       cval=0.0, truncate=10.0)
+                elif filter_spatial == 'Median':
+                    outputData[i1, i2, :, :] = ndimage.median_filter(inputData[i1, i2, :, :],
+                                                                     size=std, mode='nearest')
+
+    else:  # TODO: other input shapes
+        pass
+
+    return outputData
+
+
 def ph_interp(x_new):
     """
     gives back spline interpolation for points on bottom boundary
@@ -437,7 +460,7 @@ def load_standardized_data(data):
 
             print('rans time:  ', rans_time)
 
-            # load rans data (grid, u, k, rs, epsilon)
+            # load rans data (grid, u, k, rs, epsilon, grad_u, grad_k, grad_p, yWall)
             grid_rans = pre.readCellCenters(rans_time, rans_path)
             u_rans = pre.readVectorData(rans_time, 'U', rans_path)
             k_rans = pre.readScalarData(rans_time, 'k', rans_path)
@@ -449,8 +472,16 @@ def load_standardized_data(data):
                 grad_u_rans = pre.readTensorData(rans_time, 'gradU', rans_path)  # or 'gradU
             else:
                 grad_u_rans = pre.readTensorData(rans_time, 'grad(U)', rans_path)
-            grad_k_rans = pre.readTensorData(rans_time, 'grad(k)', rans_path)
-            grad_p_rans = pre.readTensorData(rans_time, 'grad(p)', rans_path)
+            grad_k_rans = pre.readVectorData(rans_time, 'grad(k)', rans_path)
+            grad_p_rans = pre.readVectorData(rans_time, 'grad(p)', rans_path)
+
+            if os.path.isfile(os.sep.join([rans_path, rans_time, 'yWall'])):
+                y_wall_rans = pre.readScalarData(rans_time, 'yWall', rans_path)
+            else:
+                y_wall_rans = pre.readScalarData(rans_time, 'wallDistance', rans_path)
+            # else:
+            #     print("Error: No yWall or wallDistance in {} {}".format(case, re))
+            #     break
 
             # reading in epsilon, otherwise calculate from omega
             if os.path.isfile(os.sep.join([rans_path, rans_time, 'epsilon'])):
@@ -459,13 +490,17 @@ def load_standardized_data(data):
                 omega_rans = pre.readScalarData(rans_time, 'omega', rans_path)  # 'epsilon' or 'omega'
                 epsilon_rans = omega_rans * k_rans * 0.09  # 0.09 is beta star
 
+            # get nu from dict
+            nu = data['nu'][i][j]
+
             # calculate mean rate of strain and rotation tensors
             s = 0.5 * (grad_u_rans + grad_u_rans.transpose(1, 2))
             r = 0.5 * (grad_u_rans - grad_u_rans.transpose(1, 2))
 
-            # normalize s and r
+            # normalize s, r, grad_k
             s_hat = (k_rans / epsilon_rans).unsqueeze(1).unsqueeze(2) * s
             r_hat = (k_rans / epsilon_rans).unsqueeze(1).unsqueeze(2) * r
+            grad_k_hat = (th.sqrt(k_rans) / epsilon_rans).unsqueeze(1) * grad_k_rans
 
             # cap s and r tensors
             if data['capSandR']:
@@ -483,11 +518,34 @@ def load_standardized_data(data):
                 print('Setting invariants 3 and 4 to 0 ...')
                 inv[:, [2, 3]] = 0.0
 
-            # scale invariants
-            # inv = mean_std_scaling(inv)
-            # print(inv.shape)
+            # compute invariants and exclude features
+            # FS1
+            if 'FS1' in data:
+                inv_fs1 = get_invariants(s_hat, r_hat)
 
-            # enfore zero trace on tensorbasis
+                if data['FS1']['excludeFeatures']:
+                    for k in data['FS1']['features'][::-1]:  # must be in reverse of indices are wrong
+                        inv_fs1 = th.cat((inv_fs1[:, :k - 1], inv_fs1[:, k:]), dim=1)
+
+            # FS2
+            if 'FS2' in data:
+                inv_fs2 = get_invariants_fs2(s_hat, r_hat, grad_k_hat)
+
+                if data['FS2']['excludeFeatures']:
+                    for k in data['FS2']['features'][::-1]:  # must be in reverse of indices are wrong
+                        inv_fs2 = th.cat((inv_fs2[:, :k - 1], inv_fs2[:, k:]), dim=1)
+
+            # FS3
+            if 'FS3' in data:
+                inv_fs3 = get_invariants_fs3(s, r, rs_rans, u_rans, grad_u_rans, grad_p_rans,
+                                             grad_k_rans, k_rans, epsilon_rans, y_wall_rans, nu)
+
+                if data['FS3']['excludeFeatures']:
+                    for k in data['FS3']['features'][::-1]:  # must be in reverse of indices are wrong
+                        inv_fs3 = th.cat((inv_fs3[:, :k - 1], inv_fs3[:, k:]), dim=1)
+
+            # compute tensorbasis and enforce zero trace
+            t = get_tensor_functions(s_hat, r_hat)
             if data['enforceZeroTrace']:
                 t = enforce_zero_trace(t)
 
@@ -535,30 +593,32 @@ def load_standardized_data(data):
                 th.save(k_rans, os.sep.join([target_path, 'k_rans-torch.th']))
                 th.save(inv, os.sep.join([target_path, 'inv-torch.th']))
                 th.save(t, os.sep.join([target_path, 't-torch.th']))
+                th.save(inv_fs1, os.sep.join([target_path, 'inv_fs1-torch.th']))
+                th.save(inv_fs2, os.sep.join([target_path, 'inv_fs2-torch.th']))
+                th.save(inv_fs3, os.sep.join([target_path, 'inv_fs3-torch.th']))
 
     return 0
-
-
-
 
 
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
+
+    # initialize dictionary
     data = {}
+
+    # set paths
     data['home'] = '/home/leonriccius/Documents/Fluid_Data'
     data['dns'] = 'dns'
     data['rans'] = 'rans_kaandorp'
-    data['target_dir'] = 'tensordata_unscaled_inv_corr'
-    data['featureSets'] = ['FS1']  #, 'FS2', 'FS3']
-    data['excludeInvariants'] = [[3, 4]]
-    data['flowCase'] = ['PeriodicHills']
-    data['Re'] = [['10595']]
-    data['nx'] = [[140]]
-    data['ny'] = [[150]]
-    data['model'] = [['kOmega']]
-    data['ransTime'] = [['30000']]
+    data['target_dir'] = 'tensordata_fs1_fs2_fs3_reduced'
 
+    # set options for data loading
+    data['FS1'] = {'excludeFeatures': True,
+                   'features': [3, 4]}
+    data['FS2'] = {'excludeFeatures': True,
+                   'features': [4, 5, 6, 7, 8, 10, 11, 12]}
+    data['FS3'] = {'excludeFeatures': False}
     data['interpolationMethod'] = 'linear'
     data['enforceZeroTrace'] = True
     data['capSandR'] = True
@@ -566,90 +626,101 @@ if __name__ == '__main__':
     data['removeNan'] = True
     data['correctInvariants'] = True
 
+    # set flow cases to load
+    data['flowCase'] = ['PeriodicHills',
+                        'ConvDivChannel',
+                        'CurvedBackwardFacingStep',
+                        'SquareDuct']
+    data['Re'] = [['700', '1400', '2800', '5600', '10595'],
+                  ['12600', '7900'],
+                  ['13700'],
+                  ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+    data['nu'] = [[1.4285714285714286e-03, 7.142857142857143e-04, 3.5714285714285714e-04, 1.7857142857142857e-04,
+                   9.438414346389807e-05],
+                  [7.936507936507937e-05, 1.26582e-04],
+                  [7.299270072992701e-05],
+                  [0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
+    data['nx'] = [[140, 140, 140, 140, 140],
+                  [140, 140],
+                  [140],
+                  [50, 50, 50, 50, 50, 50, 50]]
+    data['ny'] = [[150, 150, 150, 150, 150],
+                  [100, 100],
+                  [150],
+                  [50, 50, 50, 50, 50, 50, 50]]
+    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
+                     ['kOmega', 'kOmega'],
+                     ['kOmega'],
+                     ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+    data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
+                        ['7000', '7000'],
+                        ['3000'],
+                        ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+
     # load_standardized_data(data)
 
-    # inv = th.load('/home/leonriccius/Documents/Fluid_Data/tensordata_unscaled_inv_corr/PeriodicHills/2800/inv-torch.th')
+    # # for testing stored invariants
+    # inv_fs1 = th.load(
+    #     '/home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel/12600/inv_fs1-torch.th')
+    # inv_fs2 = th.load(
+    #     '/home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel/12600/inv_fs2-torch.th')
+    # inv_fs3 = th.load(
+    #     '/home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel/12600/inv_fs3-torch.th')
+    # grid = th.load(
+    #     '/home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel/12600/grid-torch.th')
 
 
 
-
-
-    # # for testing invariants
-    rans_path = '/home/leonriccius/Documents/Fluid_Data/rans_kaandorp/PeriodicHills/Re10595_kOmega_150'
-    rans_time = '30000'
-
-    u = pre.readVectorData(rans_time, 'U', rans_path)
-    grid = pre.readCellCenters(rans_time, rans_path)
-    rs = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', rans_path).reshape(-1, 3, 3)
-    grad_u = pre.readTensorData(rans_time, 'grad(U)', rans_path)
-    grad_k = pre.readVectorData(rans_time, 'grad(k)', rans_path)
-    grad_p = pre.readVectorData(rans_time, 'grad(p)', rans_path)
-    yWall = pre.readScalarData(rans_time, 'yWall', rans_path)
-    k = pre.readScalarData(rans_time, 'k', rans_path)
-    omega = pre.readScalarData(rans_time, 'omega', rans_path)  # 'epsilon' or 'omega'
-    epsilon = omega * k * 0.09  # 0.09 is beta star
-    nu = 9.438414346389807e-05
-
-    # calculate mean rate of strain and rotation tensors
-    s = 0.5 * (grad_u + grad_u.transpose(1, 2))
-    r = 0.5 * (grad_u - grad_u.transpose(1, 2))
-
-    # normalize s and r
-    s_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * s
-    r_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * r
-    grad_k_hat = (th.sqrt(k) / epsilon).unsqueeze(1) * grad_k
-
-    inv = get_invariants_fs3(s, r, rs, u, grad_u, grad_p, grad_k, k, epsilon, yWall, nu)
-
-    import matplotlib
-
-    cmap = matplotlib.cm.get_cmap("coolwarm")
-
-    i = 4
-    inv_min = th.min(inv[:, i])
-    inv_max = th.max(inv[:, i])
-    levels = np.linspace(inv_min, inv_max, 50)
-    fig, ax = plt.subplots(figsize=(9, 3))
-    plot = ax.tricontourf(grid[:, 0], grid[:, 1], inv[:, i], cmap=cmap, levels=levels)
-    ax.set_title('Inv {}'.format(i + 1))
-    fig.colorbar(plot)
-    fig.show()
-
-    # data = {}
-    # data['home'] = '/home/leonriccius/Documents/Fluid_Data'
-    # data['dns'] = 'dns'
-    # data['rans'] = 'rans_kaandorp'
-    # data['target_dir'] = 'tensordata_unscaled_inv_corr'
-    # data['featureSets'] = ['FS1'] #, 'FS2', 'FS3']
-    # data['excludeInvariants'] = [[3, 4]]
-    # data['flowCase'] = ['PeriodicHills',
-    #                     'ConvDivChannel',
-    #                     'CurvedBackwardFacingStep',
-    #                     'SquareDuct']
-    # data['Re'] = [['700', '1400', '2800', '5600', '10595'],
-    #               ['12600', '7900'],
-    #               ['13700'],
-    #               ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
-    # data['nx'] = [[140, 140, 140, 140, 140],
-    #               [140, 140],
-    #               [140],
-    #               [50, 50, 50, 50, 50, 50, 50]]
-    # data['ny'] = [[150, 150, 150, 150, 150],
-    #               [100, 100],
-    #               [150],
-    #               [50, 50, 50, 50, 50, 50, 50]]
-    # data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
-    #                  ['kOmega', 'kOmega'],
-    #                  ['kOmega'],
-    #                  ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
-    # data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
-    #                     ['7000', '7000'],
-    #                     ['3000'],
-    #                     ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+    # # for testing invariants from raw data
+    # rans_path = '/home/leonriccius/Documents/Fluid_Data/rans_kaandorp/PeriodicHills/Re10595_kOmega_150'
+    # rans_time = '30000'
     #
-    # data['interpolationMethod'] = 'linear'
-    # data['enforceZeroTrace'] = True
-    # data['capSandR'] = True
-    # data['saveTensors'] = True
-    # data['removeNan'] = True
-    # data['correctInvariants'] = True
+    # u = pre.readVectorData(rans_time, 'U', rans_path)
+    # grid = pre.readCellCenters(rans_time, rans_path)
+    # rs = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', rans_path).reshape(-1, 3, 3)
+    # grad_u = pre.readTensorData(rans_time, 'grad(U)', rans_path)
+    # grad_k = pre.readVectorData(rans_time, 'grad(k)', rans_path)
+    # grad_p = pre.readVectorData(rans_time, 'grad(p)', rans_path)
+    # yWall = pre.readScalarData(rans_time, 'yWall', rans_path)
+    # k = pre.readScalarData(rans_time, 'k', rans_path)
+    # omega = pre.readScalarData(rans_time, 'omega', rans_path)  # 'epsilon' or 'omega'
+    # epsilon = omega * k * 0.09  # 0.09 is beta star
+    # nu = 9.438414346389807e-05
+    #
+    # # calculate mean rate of strain and rotation tensors
+    # s = 0.5 * (grad_u + grad_u.transpose(1, 2))
+    # r = 0.5 * (grad_u - grad_u.transpose(1, 2))
+    #
+    # # normalize s and r
+    # s_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * s
+    # r_hat = (k / epsilon).unsqueeze(1).unsqueeze(2) * r
+    # grad_k_hat = (th.sqrt(k) / epsilon).unsqueeze(1) * grad_k
+    #
+    # inv = get_invariants_fs3(s, r, rs, u, grad_u, grad_p, grad_k, k, epsilon, yWall, nu)
+
+
+    # # for plotting invariants
+    # import matplotlib
+    #
+    # cmap = matplotlib.cm.get_cmap("coolwarm")
+    # #
+    # inv = inv_fs2
+    # for i in range(5):
+    #     inv_min = th.min(inv[:, i])
+    #     inv_max = th.max(inv[:, i])
+    #     levels = np.linspace(inv_min, inv_max, 50)
+    #     fig, ax = plt.subplots(figsize=(9, 3))
+    #     plot = ax.tricontourf(grid[:, 0], grid[:, 1], inv[:, i], cmap=cmap, levels=levels)
+    #     ax.set_title('Inv {}'.format(i + 1))
+    #     fig.colorbar(plot)
+    #     fig.show()
+
+
+    # # data from one flow case to test load_data function
+    # data['flowCase'] = ['PeriodicHills']
+    # data['Re'] = [['10595']]
+    # data['nx'] = [[140]]
+    # data['ny'] = [[150]]
+    # data['model'] = [['kOmega']]
+    # data['ransTime'] = [['30000']]
+    # data['nu'] = [[9.438414346389807e-05]]

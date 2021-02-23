@@ -196,17 +196,19 @@ class TBNNModel:
         self.n_val = 0
         self.batch_size = 20
 
-    def load_data(self, parent_dir, child_dir, n_samples=10000):
+    def load_data(self, parent_dir, child_dir, feature_sets, n_samples=10000):
         """
         Method to load data in the model  (training and validation)
         :param n_samples: (int) number of samples per flow geometry
         :param parent_dir: (str) parent directory
+        :param feature_sets: (str) list of string for feature sets to use. Valid options are FS1, FS2, FS3
         :param child_dir: (str) list of strings which hold directories to loop through
         """
 
         # loop over flow geometries
         for i, directory in enumerate(parent_dir):
             inv = th.tensor([])
+            inv_add = th.tensor([])
             t = th.tensor([])
             b = th.tensor([])
             grid = th.tensor([])
@@ -214,10 +216,19 @@ class TBNNModel:
             # loop over reynolds numbers
             for _, case in enumerate(child_dir[i]):
                 curr_dir = os.sep.join([directory, case])
-                inv = th.cat((inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
+                # inv = th.cat((inv, th.load(os.sep.join([curr_dir, 'inv-torch.th']))))
                 t = th.cat((t, th.load(os.sep.join([curr_dir, 't-torch.th'])).flatten(2)))
                 b = th.cat((b, th.load(os.sep.join([curr_dir, 'b_dns-torch.th'])).flatten(1)))
                 grid = th.cat((grid, th.load(os.sep.join([curr_dir, 'grid-torch.th']))))
+
+                inv_tmp = th.tensor([])
+                if 'FS1' in feature_sets:
+                    inv_tmp = th.cat((inv_tmp, th.load(os.sep.join([curr_dir, 'inv_fs1-torch.th']))), dim=1)
+                if 'FS3' in feature_sets:
+                    inv_tmp = th.cat((inv_tmp, th.load(os.sep.join([curr_dir, 'inv_fs2-torch.th']))), dim=1)
+                if 'FS3' in feature_sets:
+                    inv_tmp = th.cat((inv_tmp, th.load(os.sep.join([curr_dir, 'inv_fs3-torch.th']))), dim=1)
+                inv = th.cat((inv, inv_tmp))
 
             # check if number of samples per geom exceeds n_samples
             print('n_samples in {}: {}'.format(directory, inv.shape[0]))
@@ -246,7 +257,7 @@ class TBNNModel:
         # calculate mean and standard deviation
         mu = th.mean(self.inv, 0)
         std = th.std(self.inv, 0)
-        std = std + (std < 0.005)*1.0
+        std = std + (std < 0.0005)*1.0
 
         # normalize tensor
         self.inv = (self.inv - mu) / std
