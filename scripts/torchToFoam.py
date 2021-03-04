@@ -16,6 +16,7 @@ b_type = {'empty': "        {0:<16}{1}\n".format("type", "empty;"),
           'fixedValue_uniform': "        {0:<16}{1}\n".format("type", "fixedValue;")+
                                 "        {0:<16}{1}\n".format("value", "uniform (0 0 0 0 0 0);"),
           'zeroGradient': "        {0:<16}{1}\n".format("type", "zeroGradient;"),
+          'symmetryPlane':"        {0:<16}{1}\n".format("type", "symmetryPlane;"),
           'cyclic': "        {0:<16}{1}\n".format("type", "cyclic;"),
           'fixedValue_nonuniform': "        {0:<16}{1}\n".format("type", "fixedValue;")+
                                    "        {0:<16}{1}\n".format("value", "nonuniform List<symmTensor>")}
