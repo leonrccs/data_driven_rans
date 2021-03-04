@@ -13,7 +13,7 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
-# import scripts.utilities
+from scripts.utilities import mask_boundary_points
 
 
 def expand_scalar_quant(vec):
@@ -180,7 +180,7 @@ class BarMap:
         triangle = Polygon(np.array([self.x_lim, self.y_lim]).T, transform=axis.transData)
         image.set_clip_path(triangle)
 
-    def plot_on_geometry(self, axis, extent=None, resolution=0.005, cut_boundary=False):
+    def plot_on_geometry(self, axis, flowcase='PH', extent=None, resolution=0.005, cut_boundary=False, wall_color=0.85):
         """plot barycentric colormap on geometry of flow car.
         inputs:
             axis - matplotlib pyplot handle where to plot
@@ -191,22 +191,21 @@ class BarMap:
         if extent is None:
             # extent = [0., 1., 0., 1.]
             extent = [self.cell_centers[:, 0].min(), self.cell_centers[:, 0].max(),
-                      self.cell_centers[:, 1].min(), self.cell_centers[:, 1].max()]
+                      self.cell_centers[:, 1].min() , self.cell_centers[:, 1].max()]
         x_grid, y_grid = np.meshgrid(np.arange(*extent[0:2], resolution), np.arange(*extent[2:4], resolution))
         c_int = np.zeros((len(x_grid.flatten()), 3))
         for i in range(3):
             c_int[:, i] = sp.interpolate.griddata(self.cell_centers,
                                                   self.c[:, i],
                                                   (x_grid.flatten(), y_grid.flatten()),
-                                                  method='linear')  # ,  fill_value='nan')
+                                                  method='linear')#, fill_value='nan')
 
         c_int = c_int/np.expand_dims(c_int.max(axis=1), axis=1)
         c_int = c_int.reshape(x_grid.shape[0], x_grid.shape[1], 3)
 
-        # if cut_boundary:
-        #     # pass
-        #     mask = scripts.utilities.mask_boundary_points(x_grid, y_grid)
-        #     c_int[~mask] = float('nan')
+        if cut_boundary:
+            mask = mask_boundary_points(x_grid, y_grid, flowcase)
+            c_int[~mask] = wall_color
 
         # plotting
         axis.imshow(c_int, extent=extent, origin='lower', interpolation='gaussian')

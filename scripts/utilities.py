@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import griddata
 from scipy import ndimage
 import datetime
-import os
+import os, sys, io, contextlib
 import scripts.preProcess as pre
 
 # Default tensor type
@@ -14,6 +14,71 @@ dtype = th.DoubleTensor
 
 def time():
     return datetime.datetime.now().strftime("%y-%m-%d_%H-%M")
+
+
+class NoStdStreams(object):
+    def __init__(self,stdout = None, stderr = None):
+        self.devnull = open(os.devnull,'w')
+        self._stdout = stdout or self.devnull or sys.stdout
+        self._stderr = stderr or self.devnull or sys.stderr
+
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush(); self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush(); self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
+        self.devnull.close()
+
+
+def bisection(f,a,b,N):
+    """
+    Approximate solution of f(x)=0 on interval [a,b] by bisection method.
+
+    Parameters
+    ----------
+    f : function
+        The function for which we are trying to approximate a solution f(x)=0.
+    a,b : numbers
+        The interval in which to search for a solution. The function returns
+        None if f(a)*f(b) >= 0 since a solution is not guaranteed.
+    N : (positive) integer
+        The number of iterations to implement.
+
+    Returns
+    -------
+    x_N : number
+        The midpoint of the Nth interval computed by the bisection method. The
+        initial interval [a_0,b_0] is given by [a,b]. If f(m_n) == 0 for some
+        midpoint m_n = (a_n + b_n)/2, then the function returns this solution.
+        If all signs of values f(a_n), f(b_n) and f(m_n) are the same at any
+        iteration, the bisection method fails and return None.
+    """
+
+    if f(a)*f(b) >= 0:
+        print("Bisection method fails.")
+        return None
+    a_n = a
+    b_n = b
+    for n in range(1,N+1):
+        m_n = (a_n + b_n)/2
+        f_m_n = f(m_n)
+        if f(a_n)*f_m_n < 0:
+            a_n = a_n
+            b_n = m_n
+        elif f(b_n)*f_m_n < 0:
+            a_n = m_n
+            b_n = b_n
+        elif f_m_n == 0:
+            print("Found exact solution.")
+            return m_n
+        else:
+            print("Bisection method fails.")
+            return None
+    return (a_n + b_n)/2
 
 
 def sigmoid_scaling(tensor):
@@ -165,7 +230,7 @@ def get_invariants_fs3(s, r, rs, u, grad_u, grad_p, grad_k, k, epsilon, d, nu):
     norm = 1/(th.sqrt(s.matmul(s.transpose(1, 2))[:, [0, 1, 2], [0, 1, 2]].sum(axis=1)))
     inv[:, 4] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
 
-    # # ratio of pressure normal stresses to shear stresses
+    # ratio of pressure normal stresses to shear stresses
     inv_raw = th.sqrt(th.einsum('ij,ij->i', grad_p, grad_p))
     norm = 0.5 * th.einsum('ijj,ij->i', grad_u, u)
     inv[:, 5] = inv_raw / (th.abs(inv_raw) + th.abs(norm))
@@ -313,20 +378,51 @@ def cbfs_interp(x_new):
     return interp1d(bumpPoints[:, 0], bumpPoints[:, 1], kind='linear', fill_value='extrapolate')(x_new)
 
 
-def mask_boundary_points(x, y, blthickness=0.15):
+def mask_boundary_points(x, y, flowcase):
     """
     gives a mask that ensures all points that are blthickness far away form boundary are labelled True
+    :param cutoff_y: thickness of boundarylayer to cut in y-direction dtype=float
+    :param cutoff_x: thickness of boundarylayer to cut in x-direction dtype=float
+    :param flowcase:
     :param x: x coordinate dtype=float
     :param y: y coordinate dytpe=float
     :param blthickness: thickness of boundarylayer to cut dtype=float
     :return: mask dtype=np.array(bool)
     """
     mask = np.ones(x.shape, dtype=bool)
-    y_interp = ph_interp(x)
-    mask[np.where(y < y_interp + blthickness)] = False
-    mask[np.where(y > 3.035 - blthickness)] = False
-    mask[np.where(x < 0. + blthickness)] = False
-    mask[np.where(x > 9. - blthickness)] = False
+
+    if flowcase == 'PH':
+        cutoff_x, cutoff_y = 0.05, 0.02
+        y_interp = ph_interp(x)
+        mask[np.where(y < y_interp + cutoff_y)] = False
+        mask[np.where(y > 3.035 - cutoff_y)] = False
+        mask[np.where(x < 0. + cutoff_x)] = False
+        mask[np.where(x > 9. - cutoff_x)] = False
+
+    if flowcase == 'CDC12600':
+        cutoff_x, cutoff_y = 0.0, 0.0
+        y_interp = cdc_interp(x, re='12600')
+        mask[np.where(y < y_interp + cutoff_y)] = False
+        mask[np.where(y > 2. - cutoff_y)] = False
+        mask[np.where(x < 0. + cutoff_x)] = False
+        mask[np.where(x > 12.5663 - cutoff_x)] = False
+
+    if flowcase == 'CDC7900':
+        cutoff_x, cutoff_y = 0.0, 0.0
+        y_interp = cdc_interp(x, re='7900')
+        mask[np.where(y < y_interp + cutoff_y)] = False
+        mask[np.where(y > 2. - cutoff_y)] = False
+        mask[np.where(x < 0. + cutoff_x)] = False
+        mask[np.where(x > 12.5663 - cutoff_x)] = False
+
+    if flowcase == 'CBFS':
+        cutoff_x, cutoff_y = 0.0, 0.0
+        y_interp = cbfs_interp(x)
+        mask[np.where(y < y_interp + cutoff_y)] = False
+        mask[np.where(y > 9.51233283532541 - cutoff_y)] = False
+        mask[np.where(x < -7.34 + cutoff_x)] = False
+        mask[np.where(x > 15.4 - cutoff_x)] = False
+
     return mask
 
 
@@ -627,37 +723,15 @@ if __name__ == '__main__':
     data['correctInvariants'] = True
 
     # set flow cases to load
-    data['flowCase'] = ['PeriodicHills',
-                        'ConvDivChannel',
-                        'CurvedBackwardFacingStep',
-                        'SquareDuct']
-    data['Re'] = [['700', '1400', '2800', '5600', '10595'],
-                  ['12600', '7900'],
-                  ['13700'],
-                  ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
-    data['nu'] = [[1.4285714285714286e-03, 7.142857142857143e-04, 3.5714285714285714e-04, 1.7857142857142857e-04,
-                   9.438414346389807e-05],
-                  [7.936507936507937e-05, 1.26582e-04],
-                  [7.299270072992701e-05],
-                  [0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
-    data['nx'] = [[140, 140, 140, 140, 140],
-                  [140, 140],
-                  [140],
-                  [50, 50, 50, 50, 50, 50, 50]]
-    data['ny'] = [[150, 150, 150, 150, 150],
-                  [100, 100],
-                  [150],
-                  [50, 50, 50, 50, 50, 50, 50]]
-    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
-                     ['kOmega', 'kOmega'],
-                     ['kOmega'],
-                     ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
-    data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
-                        ['7000', '7000'],
-                        ['3000'],
-                        ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+    data['flowCase'] = ['SquareDuct']
+    data['Re'] = [['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+    data['nu'] = [[0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
+    data['nx'] = [[50, 50, 50, 50, 50, 50, 50]]
+    data['ny'] = [[50, 50, 50, 50, 50, 50, 50]]
+    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+    data['ransTime'] = [['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
 
-    # load_standardized_data(data)
+    load_standardized_data(data)
 
     # # for testing stored invariants
     # inv_fs1 = th.load(
@@ -724,3 +798,35 @@ if __name__ == '__main__':
     # data['model'] = [['kOmega']]
     # data['ransTime'] = [['30000']]
     # data['nu'] = [[9.438414346389807e-05]]
+
+    # # set flow cases to load
+    # data['flowCase'] = ['PeriodicHills',
+    #                     'ConvDivChannel',
+    #                     'CurvedBackwardFacingStep',
+    #                     'SquareDuct']
+    # data['Re'] = [['700', '1400', '2800', '5600', '10595'],
+    #               ['12600', '7900'],
+    #               ['13700'],
+    #               ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+    # data['nu'] = [[1.4285714285714286e-03, 7.142857142857143e-04, 3.5714285714285714e-04, 1.7857142857142857e-04,
+    #                9.438414346389807e-05],
+    #               [7.936507936507937e-05, 1.26582e-04],
+    #               [7.299270072992701e-05],
+    #               [0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
+    # data['nx'] = [[140, 140, 140, 140, 140],
+    #               [140, 140],
+    #               [140],
+    #               [50, 50, 50, 50, 50, 50, 50]]
+    # data['ny'] = [[150, 150, 150, 150, 150],
+    #               [100, 100],
+    #               [150],
+    #               [50, 50, 50, 50, 50, 50, 50]]
+    # data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
+    #                  ['kOmega', 'kOmega'],
+    #                  ['kOmega'],
+    #                  ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+    # data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
+    #                     ['7000', '7000'],
+    #                     ['3000'],
+    #                     ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+
