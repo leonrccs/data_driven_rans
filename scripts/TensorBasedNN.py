@@ -291,7 +291,7 @@ class TBNNModel:
          self.b_train, self.b_val,
          self.grid_train, self.grid_val) = train_test_split(self.inv, self.T, self.b, self.grid,
                                                             test_size=self.n_val,
-                                                            random_state=seed) # TODO remove seed for actual training
+                                                            random_state=seed)
         self.inv_train.requires_grad = True
 
     def l2loss(self):
@@ -352,7 +352,7 @@ class TBNNModel:
             batch_size = 100
 
         if 'weight_decay' in kwargs:
-            weight_decay = kwargs['weight_decay']
+            weight_decay = kwargs['weight_decay']/lr_initial
         else:
             weight_decay = 0.0
 
@@ -360,6 +360,12 @@ class TBNNModel:
             moving_average = kwargs['moving_average']
         else:
             moving_average = 5
+
+        if 'min_epochs' in kwargs:
+            min_epochs = kwargs['min_epochs']
+        else:
+            min_epochs = 500
+
         if 'lambda_real' in kwargs:
             lambda_real = kwargs['lambda_real']
         else:
@@ -370,8 +376,19 @@ class TBNNModel:
         else:
             error_method = 'b_full'
 
+        if 'builtin_weightdecay' in kwargs:
+            builtin_wd = kwargs['builtin_weightdecay']
+        else:
+            builtin_wd = False
+
+        if 'fixed_seed' in kwargs:
+            np.random.seed(12345)
+
         # set optimizer
-        optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial)
+        if builtin_wd:
+            optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial, weight_decay=weight_decay)
+        else:
+            optimizer = th.optim.Adam(self.net.parameters(), lr=lr_initial)
 
         # set learning rate scheduler if defined in param dict
         if 'lr_scheduler' in kwargs:
@@ -420,7 +437,10 @@ class TBNNModel:
 
                 # compute and print loss
                 # loss = self.loss_fn(b_pred, b_batch) + weight_decay*self.l2loss() + lambda_real*loss_real_train
-                loss = self.loss_function(error_method)(b_pred, b_batch)
+                if builtin_wd:
+                    loss = self.loss_function(error_method)(b_pred, b_batch)
+                else:
+                    loss = self.loss_function(error_method)(b_pred, b_batch) + weight_decay*self.l2loss()
 
                 # print('b_unique: {}'.format(self.loss_function(error_method)(b_pred, b_batch)))
                 # print('b_full:   {}'.format(self.loss_function('b_full')(b_pred, b_batch)))
@@ -443,7 +463,7 @@ class TBNNModel:
             #             + self.l2loss(weight_decay)
             #             + loss_realizability(b_val_pred))
             self.val_loss_vector = np.append(self.val_loss_vector,
-                                             self.loss_fn(b_val_pred,self.b_val).detach().numpy())
+                                             self.loss_function(error_method)(b_val_pred, self.b_val).detach().numpy())
             # self.val_loss_vector = np.append(self.val_loss_vector, loss_val.detach().numpy())
             # output optimization state
             if epoch % 20 == 0:
@@ -460,13 +480,14 @@ class TBNNModel:
                     print(scheduler.state_dict()['_last_lr'])
 
             # check if moving average decreased
-            if (epoch > 500) & (epoch % 10 == 0) & kwargs['early_stopping']:
+            if (epoch > min_epochs) & (epoch % 10 == 0) & kwargs['early_stopping']:
                 this_val_loss_avg = np.sum(self.val_loss_vector[-moving_average:])/moving_average
                 if this_val_loss_avg > last_val_loss_avg:
                     print('Validation loss moving average increased!')
-                    print('Preliminary stop the optimization at epoch {}'.format(epoch))
-                    print('Last validation loss average: {}'.format(last_val_loss_avg))
-                    print('This validation loss average: {}'.format(this_val_loss_avg))
+                    print('Preliminary stop the optimization at epoch {}\n'.format(epoch))
+                    print('Last validation loss average: {:.6e}'.format(last_val_loss_avg))
+                    print('This validation loss average: {:.6e}'.format(this_val_loss_avg))
+                    print('RMSE after last iteration:    {:.6e}\n'.format(np.sqrt(self.val_loss_vector[-1])))
                     break
                 else:
                     last_val_loss_avg = this_val_loss_avg
