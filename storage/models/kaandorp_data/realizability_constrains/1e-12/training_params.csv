@@ -11,4 +11,4 @@ builtin_weightdecay,False
 lambda_real,tensor(1.0000e-12)
 error_method,b_unique
 train_set_size,9800
-last_val_loss,0.0009758664040026717
+last_val_loss,0.0009774521356139007

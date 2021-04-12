@@ -9,8 +9,6 @@ if __name__ == '__main__':
     # setting directory structure
     rans_dir =  ['Re2000_kOmega_50', 'Re1800_kOmega_50', 'Re2200_kOmega_50', 'Re2400_kOmega_50', 'Re2600_kOmega_50',
                  'Re2900_kOmega_50', 'Re3200_kOmega_50', 'Re3500_kOmega_50']
-    #, '12600'] # ['5600']   # ['700', '1400', '2800', '5600']
-    # rans_path = '/home/leonriccius/gkm/OpenFOAM/leon-v2006/custom_cases/backward_facing_step/geneva/'
     rans_path = '/home/leonriccius/Documents/Fluid_Data/rans_kaandorp/SquareDuct'
 
     for i in rans_dir:

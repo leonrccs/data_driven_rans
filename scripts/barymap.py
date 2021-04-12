@@ -16,19 +16,15 @@ from matplotlib.patches import Polygon
 from scripts.utilities import mask_boundary_points
 
 
-def expand_scalar_quant(vec):
-    """expand a scalar quantity to a 2nd rank tensor for division/multiplication"""
-    vec = np.expand_dims(vec, axis=1)
-    vec = np.repeat(vec, 3, axis=1)
-    vec = np.expand_dims(vec, axis=2)
-    vec = np.repeat(vec, 3, axis=2)
-    return vec
-
-
 def anisotropy(rs, k):
-    """calculate normalized anisotropy tensor"""
+    """
+    calculate normalized anisotropy tensor
+    :param rs: reynolds stress tensor (Nx3x3)
+    :param k: tke (N)
+    :return:
+    """
     k = th.maximum(k, th.tensor(1e-8))
-    b = rs[:] / (2 * expand_scalar_quant(k)) - 1 / 3 * np.full((len(k), 3, 3), np.identity(3))
+    b = rs[:] / (2 * k.unsqueeze(1).unsqueeze(2)) - 1 / 3 * th.eye(3).unsqueeze(0).expand(k.shape[0], 3, 3)
     return b
 
 
@@ -198,7 +194,7 @@ class BarMap:
             c_int[:, i] = sp.interpolate.griddata(self.cell_centers,
                                                   self.c[:, i],
                                                   (x_grid.flatten(), y_grid.flatten()),
-                                                  method='linear')#, fill_value='nan')
+                                                  method='linear') #, fill_value='nan')
 
         c_int = c_int/np.expand_dims(c_int.max(axis=1), axis=1)
         c_int = c_int.reshape(x_grid.shape[0], x_grid.shape[1], 3)
@@ -213,93 +209,21 @@ class BarMap:
 
 
 if __name__ == '__main__':
-    # folder = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/refined_mesh/'
-    folder = '/home/leonriccius/Downloads/converging_diverging_channel/DNS/'
-    # '/home/leonriccius/gkm/Masters_Thesis/Fluid_Data/converging_diverging_channel/DNS/'
-    # '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/converging_diverging_channel/7900/original_mesh/'
-    cases = ['12600']  # ['7900']  # ['kEpsilon', 'realizableKE', 'kOmega', 'kOmegaSST']
-    time = '/tensordata'  # '1500'
 
-    titles = [r'$k-\epsilon$', r'realizable $k-\epsilon$', r'$k-\omega$', r'$k-\omega$ SST']
-
-    # maps = []
-    #
+    # example on how to use the barycentric map
     path = '/home/leonriccius/Documents/Fluid_Data/tensordata/SquareDuct/2000'
 
+    # load in anisotropy tensor b
     b_dns = th.load(os.sep.join([path, 'b_dns-torch.th']))
     b_rans = th.load(os.sep.join([path, 'b_rans-torch.th']))
     grid = th.load(os.sep.join([path, 'grid-torch.th']))
 
+    # create BarMap objects and compute barycentric coordinates
     barm_rans = BarMap()
     barm_rans.load_from_variable(b_rans, grid[:, 1:3])
     barm_rans.calculate_barycentric_coordinates()
 
+    # plot and show
     fig, ax = plt.subplots()
     barm_rans.plot_on_geometry(ax)
     fig.show()
-
-
-
-    # fig, ax = plt.subplots()
-    # maps[0].plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
-
-    # fig, ax = plt.subplots()
-    # maps[0].plot_data_points(ax)
-    # maps[0].plot_triangle(ax)
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # maps[0].plot_on_geometry(ax, extent=[0., 9., 0., 3.035])
-    # plt.show()
-
-    # fig, ax = plt.subplots(1, 4, figsize=(12, 5.5), sharex=True, sharey=True, tight_layout=True)  # figsize=(6, 4))
-    # fig, ax = plt.subplots(1, 1, figsize=(12, 3), sharex=True, tight_layout=True)  # figsize=(6, 4)), sharey=True
-
-    # for i, val in enumerate(maps):
-    #     val.calculate_barycentric_coordinates()
-    #     # val.plot_data_points(ax[i])
-    #     # val.plot_triangle(ax[i])
-    #     val.plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
-    #     # ax.set_title(titles[i])
-    #
-    # plt.show()
-    # plt.savefig('/home/leonriccius/gkm/Masters_Thesis/jupyter_notebook/images/converging_diverging_channel/barmap_on_geom_7900_DNS.svg', format='svg')
-
-    # data_path = '/home/leonriccius/gkm/Masters_Thesis/Fluid_Data/converging_diverging_channel/DNS/7900/tensordata/'
-    # barm = BarMap(data_path)
-    # barm.calculate_barycentric_coordinates()
-    # fig, ax = plt.subplots()
-    #
-    # barm.plot_data_points(ax)
-    # barm.plot_triangle(ax)
-    # # barm.plot_on_geometry(ax, extent=[0, 12.5664, 0, 2])
-    # plt.show()
-
-    # data_path_rke = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/realizableKE/5600/1500/'
-    # data_path_ko = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/k-omega/5600/1500/'
-    # data_path_ke = '/home/leonriccius/OpenFOAM_build/OpenFOAM-v2006/custom_cases/periodic_hills_RANS/k-epsilon/5600/1500/'
-    # # '/home/leonriccius/gkm/Masters_Thesis/Fluid_Data/periodic_hills/RANS/k-epsilon/5600/1500/'
-    # barm = [BarMap(data_path_ke), BarMap(data_path_ko), BarMap(data_path_rke)]
-    # titles = [r'$k-\epsilon$', r'$k-\omega$ SST',r'realizable $k-\epsilon$']
-    # for i in barm:
-    #     i.calculate_barycentric_coordinates()
-    #
-    # fig, ax = plt.subplots(3, 1, figsize=(9, 10), sharex=True, tight_layout=True)  # figsize=(6, 4)),
-    # for i, val in enumerate(barm):
-    #     print(i)
-    #     val.plot_on_geometry(ax[i], extent=[0., 9., 0., 3.035])
-    #     ax[i].set_title(titles[i])
-    #
-    # ax[1].set_ylabel(r'$y$')
-    # ax[2].set_xlabel(r'$x$')
-    # plt.savefig('/home/leonriccius/gkm/Masters_Thesis/jupyter_notebook/images/Re_5600_ke_vs_ko_vs_tke_barycentric_map_on_geom.svg', format='svg')
-
-    # barm[0].plot_data_points(ax[0])
-    # barm.plot_triangle(ax)
-    # plt.show()
-    # plt.savefig('/home/leonriccius/gkm/Masters_Thesis/jupyter_notebook/images/'
-    #             'Re_5600_ke_vs_ko_vs_tke_barycentric_map.svg', format='svg')
-
-    # fig, ax = plt.subplots()
-    # barm[2].plot_on_geometry(ax)
-    # plt.show()

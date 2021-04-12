@@ -722,14 +722,14 @@ if __name__ == '__main__':
     data['removeNan'] = True
     data['correctInvariants'] = True
 
-    # set flow cases to load
-    data['flowCase'] = ['SquareDuct']
-    data['Re'] = [['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
-    data['nu'] = [[0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
-    data['nx'] = [[50, 50, 50, 50, 50, 50, 50]]
-    data['ny'] = [[50, 50, 50, 50, 50, 50, 50]]
-    data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
-    data['ransTime'] = [['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+    # # set flow cases to load
+    data['flowCase'] = ['CurvedBackwardFacingStep']
+    data['Re'] = [['13700']]
+    data['nu'] = [[7.299270072992701e-05]]
+    data['nx'] = [[300]]
+    data['ny'] = [[150]]
+    data['model'] = [['kOmega']]
+    data['ransTime'] = [['7000']]
 
     load_standardized_data(data)
 
@@ -830,3 +830,11 @@ if __name__ == '__main__':
     #                     ['3000'],
     #                     ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
 
+    # # for reloading square duct
+    # data['flowCase'] = ['SquareDuct']
+    # data['Re'] = [['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+    # data['nu'] = [[0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
+    # data['nx'] = [[50, 50, 50, 50, 50, 50, 50]]
+    # data['ny'] = [[50, 50, 50, 50, 50, 50, 50]]
+    # data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+    # data['ransTime'] = [['40000', '40000', '50000', '50000', '50000', '50000', '50000']]

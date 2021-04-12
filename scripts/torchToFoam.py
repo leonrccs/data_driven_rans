@@ -42,14 +42,11 @@ def writesymmtensor(tensor,
 
         # write header
         of.write(header)
+
         # write number of internal points
         of.write("{}\n(\n".format(tensor.shape[0]))
 
         # write internal points
-        # for i in range(tensor.shape[0]):
-        #     of.write("({:9f} {:9f} {:9f} {:9f} {:9f} {:9f})\n".format(tensor[i, 0, 0], tensor[i, 0, 1],
-        #                                                               tensor[i, 0, 2], tensor[i, 1, 1],
-        #                                                               tensor[i, 1, 2], tensor[i, 2, 2]))
         for point in tensor:
             of.write("({:9f} {:9f} {:9f} {:9f} {:9f} {:9f})\n".format(point[0, 0], point[0, 1],
                                                                       point[0, 2], point[1, 1],
@@ -85,27 +82,21 @@ def writesymmtensor(tensor,
 
 
 if __name__=='__main__':
-    path = '/home/leonriccius/OpenFOAM/leonriccius-v2006/run/pitzDaily/kEpsilon'
-    rans_time = '282'
-    rs = pre.readSymTensorData(rans_time, 'turbulenceProperties:R', path).reshape(-1, 3, 3)
-    cellCenters = pre.readCellCenters(rans_time, path)
 
-    # compute k
-    k0 = 0.5 * th.from_numpy(rs.numpy().trace(axis1=1, axis2=2))
-    k = k0.unsqueeze(0).unsqueeze(0).expand(3, 3, k0.shape[0])
-    k = k.permute(2, 0, 1)
+    # set b
+    tmp = th.rand(10, 3, 3)
+    b0 = 0.5 * (tmp + tmp.transpose(1, 2))
 
-    # compute b
-    b0 = rs / (2 * k) - 1 / 3 * th.eye(3).unsqueeze(0).expand(k0.shape[0], 3, 3)
-
-    rand_tensor = th.rand(5, 3, 3)
-    boundary_b = 0.5 * (rand_tensor + rand_tensor.transpose(1, 2))
+    # set boundary b
+    tmp = th.rand(5, 3, 3)
+    boundary_b = 0.5 * (tmp + tmp.transpose(1, 2))
 
     # list for boundary names and corresponding type
-    b_list = [('inlet', 'fixedValue_uniform'),
+    b_list = [('inlet', 'fixedValue_nonuniform', boundary_b),
               ('outlet', 'zeroGradient'),
               ('upperWall', 'fixedValue_uniform'),
-              ('lowerWall', 'fixedValue_nonuniform', boundary_b),
+              ('lowerWall', 'fixedValue_uniform'),
               ('frontAndBack', 'empty')]
-    writesymmtensor(b0, '/home/leonriccius/Desktop/b_dd_pycharm', b_list)
 
+    # write tensor to file
+    writesymmtensor(b0, '/home/leonriccius/Desktop/b_dd', b_list)
