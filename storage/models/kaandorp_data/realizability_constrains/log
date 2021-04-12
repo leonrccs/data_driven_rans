@@ -1,0 +1,2128 @@
+/home/leonriccius/PycharmProjects/data_driven_rans/venv/bin/python /home/leonriccius/PycharmProjects/data_driven_rans/main.py
+tensor([1.0000e-14, 1.0000e-12, 1.0000e-10, 1.0000e-08, 1.0000e-06, 1.0000e-04,
+        1.0000e-02, 1.0000e+00])
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       9.9999998245167e-15
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+/home/leonriccius/PycharmProjects/data_driven_rans/venv/lib/python3.8/site-packages/torch/autograd/__init__.py:130: UserWarning: CUDA initialization: Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx (Triggered internally at  /pytorch/c10/cuda/CUDAFunctions.cpp:100.)
+  Variable._execution_engine.run_backward(
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251090e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261923e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-16
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-15
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-15
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.0000e-14), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       9.999999960041972e-13
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251090e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261924e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-14
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-13
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-13
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.0000e-12), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       1.000000013351432e-10
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348886e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251091e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499951e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261924e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-12
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-11
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-11
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.0000e-10), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       9.99999993922529e-09
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251090e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261924e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-10
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-09
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-09
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.0000e-08), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       9.999999974752427e-07
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251091e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261924e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-08
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-07
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-07
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.0000e-06), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       9.999999747378752e-05
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e-02
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251090e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497566e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261923e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-06
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-05
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-05
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.0000e-04), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       0.009999999776482582
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e-02
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e-02
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251090e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261923e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-04
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-03
+ Realizability loss (val):   0.000000e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-03
+ Realizability loss (val):   0.000000e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(0.0100), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+______________________________________________________________________________________________
+NN initialized
+n_samples in /home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced/ConvDivChannel: 14000
+Successfully loaded 14000 data points
+Parameter:   lr_initial          
+    Value:       2.5e-05
+Parameter:   n_epochs            
+    Value:       1000
+Parameter:   batch_size          
+    Value:       100
+Parameter:   fixed_seed          
+    Value:       True
+Parameter:   early_stopping      
+    Value:       True
+Parameter:   moving_average      
+    Value:       5
+Parameter:   min_epochs          
+    Value:       200
+Parameter:   weight_decay        
+    Value:       0
+Parameter:   builtin_weightdecay 
+    Value:       False
+Parameter:   lambda_real         
+    Value:       1.0
+Parameter:   error_method        
+    Value:       b_unique
+Parameter:   train_set_size      
+    Value:       9800
+Start training model ...
+Using 9800 data points for training
+Epoch: 0
+ Training loss:              1.197086e+00
+ Validation loss:            1.927290e+00
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.843440e+02
+ Realizability loss (val):   2.415419e+04
+
+Epoch: 20
+ Training loss:              1.554417e-02
+ Validation loss:            2.700714e-02
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.393824e+00
+ Realizability loss (val):   2.771937e+02
+
+Epoch: 40
+ Training loss:              9.423416e-03
+ Validation loss:            8.514292e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.472210e+00
+ Realizability loss (val):   2.896316e+01
+
+Epoch: 60
+ Training loss:              4.004025e-03
+ Validation loss:            4.658203e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.477015e-01
+ Realizability loss (val):   1.668948e+01
+
+Epoch: 80
+ Training loss:              3.328044e-03
+ Validation loss:            3.973394e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.899348e-01
+ Realizability loss (val):   1.142194e+01
+
+Epoch: 100
+ Training loss:              4.537190e-03
+ Validation loss:            3.574969e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.626692e-02
+ Realizability loss (val):   4.913976e+00
+
+Epoch: 120
+ Training loss:              3.263934e-03
+ Validation loss:            3.362421e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.858996e-02
+ Realizability loss (val):   2.782197e+00
+
+Epoch: 140
+ Training loss:              3.551997e-03
+ Validation loss:            3.145717e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.348885e-02
+ Realizability loss (val):   4.157113e+00
+
+Epoch: 160
+ Training loss:              3.076702e-03
+ Validation loss:            2.948782e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.251091e-01
+ Realizability loss (val):   7.843154e+00
+
+Epoch: 180
+ Training loss:              2.665678e-03
+ Validation loss:            2.617669e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.119285e-01
+ Realizability loss (val):   1.145331e+01
+
+Epoch: 200
+ Training loss:              3.948146e-03
+ Validation loss:            2.243051e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.499950e-01
+ Realizability loss (val):   1.261325e+01
+
+Epoch: 220
+ Training loss:              1.283401e-03
+ Validation loss:            2.083659e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.497567e-01
+ Realizability loss (val):   1.120905e+01
+
+Epoch: 240
+ Training loss:              1.871099e-03
+ Validation loss:            1.987359e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.833032e-01
+ Realizability loss (val):   8.874932e+00
+
+Epoch: 260
+ Training loss:              2.306510e-03
+ Validation loss:            1.869247e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.475375e-01
+ Realizability loss (val):   5.660952e+00
+
+Epoch: 280
+ Training loss:              1.468582e-03
+ Validation loss:            1.786383e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.585308e-02
+ Realizability loss (val):   4.500181e+00
+
+Epoch: 300
+ Training loss:              1.361063e-03
+ Validation loss:            1.713570e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 3.228119e-01
+ Realizability loss (val):   4.984100e+00
+
+Epoch: 320
+ Training loss:              2.972034e-03
+ Validation loss:            1.660122e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.080945e-01
+ Realizability loss (val):   4.421169e+00
+
+Epoch: 340
+ Training loss:              1.500355e-03
+ Validation loss:            1.605014e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.058112e-01
+ Realizability loss (val):   6.269974e+00
+
+Epoch: 360
+ Training loss:              2.207246e-03
+ Validation loss:            1.552890e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.010367e-01
+ Realizability loss (val):   5.431898e+00
+
+Epoch: 380
+ Training loss:              1.138439e-03
+ Validation loss:            1.527566e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.195574e-01
+ Realizability loss (val):   5.456394e+00
+
+Epoch: 400
+ Training loss:              2.014766e-03
+ Validation loss:            1.461892e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 0.000000e+00
+ Realizability loss (val):   6.768868e+00
+
+Epoch: 420
+ Training loss:              1.500519e-03
+ Validation loss:            1.420525e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.414759e-01
+ Realizability loss (val):   5.948532e+00
+
+Epoch: 440
+ Training loss:              1.054723e-03
+ Validation loss:            1.399603e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 4.149563e-01
+ Realizability loss (val):   6.608758e+00
+
+Epoch: 460
+ Training loss:              1.228830e-03
+ Validation loss:            1.349043e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 5.506900e-02
+ Realizability loss (val):   7.020867e+00
+
+Epoch: 480
+ Training loss:              8.796055e-04
+ Validation loss:            1.294922e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 2.395011e-01
+ Realizability loss (val):   5.964155e+00
+
+Epoch: 500
+ Training loss:              8.041203e-04
+ Validation loss:            1.244959e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 7.867101e-02
+ Realizability loss (val):   5.787919e+00
+
+Epoch: 520
+ Training loss:              1.344694e-03
+ Validation loss:            1.188234e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 8.430322e-02
+ Realizability loss (val):   5.300114e+00
+
+Epoch: 540
+ Training loss:              1.107979e-03
+ Validation loss:            1.121484e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.060452e-02
+ Realizability loss (val):   5.073260e+00
+
+Epoch: 560
+ Training loss:              7.765807e-04
+ Validation loss:            1.060188e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.261924e-02
+ Realizability loss (val):   5.374189e+00
+
+Epoch: 580
+ Training loss:              1.193024e-03
+ Validation loss:            1.031345e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 9.754790e-02
+ Realizability loss (val):   3.405811e+00
+
+Epoch: 600
+ Training loss:              2.301876e-03
+ Validation loss:            1.000370e-03
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.787723e-01
+ Realizability loss (val):   8.930994e+00
+
+Epoch: 620
+ Training loss:              9.119939e-04
+ Validation loss:            9.742512e-04
+ l2 loss:                    0.000000e+00
+ Realizability loss (train): 1.078842e-01
+ Realizability loss (val):   6.348516e+00
+
+Validation loss moving average increased!
+Preliminary stop the optimization at epoch 630
+
+Last validation loss average: 9.761175e-04
+This validation loss average: 9.841238e-04
+RMSE after last iteration:    3.123886e-02
+
+{'lr_initial': 2.5e-05, 'n_epochs': 1000, 'batch_size': 100, 'fixed_seed': True, 'early_stopping': True, 'moving_average': 5, 'min_epochs': 200, 'weight_decay': 0, 'builtin_weightdecay': False, 'lambda_real': tensor(1.), 'error_method': 'b_unique', 'train_set_size': 9800, 'last_val_loss': 0.0009758664040026717}
+Saving model and relevant data ...
+... Done!
+
+
+Process finished with exit code 0
+
