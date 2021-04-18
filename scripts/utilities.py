@@ -706,8 +706,8 @@ if __name__ == '__main__':
     # set paths
     data['home'] = '/home/leonriccius/Documents/Fluid_Data'
     data['dns'] = 'dns'
-    data['rans'] = 'rans_kaandorp'
-    data['target_dir'] = 'tensordata_fs1_fs2_fs3_reduced'
+    data['rans'] = 'rans'
+    data['target_dir'] = 'tensordata'
 
     # set options for data loading
     data['FS1'] = {'excludeFeatures': True,
@@ -722,7 +722,7 @@ if __name__ == '__main__':
     data['removeNan'] = True
     data['correctInvariants'] = True
 
-    # # set flow cases to load
+    # set flow cases to load
     data['flowCase'] = ['CurvedBackwardFacingStep']
     data['Re'] = [['13700']]
     data['nu'] = [[7.299270072992701e-05]]
@@ -790,7 +790,7 @@ if __name__ == '__main__':
     #     fig.show()
 
 
-    # # data from one flow case to test load_data function
+    # # data from all flow cases to test load_data function
     # data['flowCase'] = ['PeriodicHills']
     # data['Re'] = [['10595']]
     # data['nx'] = [[140]]

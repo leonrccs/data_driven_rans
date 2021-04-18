@@ -1,4 +1,5 @@
 from scripts import TensorBasedNN
+from scripts.utilities import load_standardized_data
 import torch as th
 import torch.nn as nn
 import os
@@ -6,15 +7,80 @@ import pandas as pd
 
 if __name__ == '__main__':
 
+    # load data from dns/rans folders
+    reload_data = False
+    if reload_data:
+        # initialize dictionary
+        data = {}
+
+        # set paths
+        data['home'] = '/home/leonriccius/Documents/Fluid_Data'
+        data['dns'] = 'dns'
+        data['rans'] = 'rans'
+        data['target_dir'] = 'tensordata'
+
+        # set options for data loading
+        data['FS1'] = {'excludeFeatures': True,
+                       'features': [3, 4]}
+        data['FS2'] = {'excludeFeatures': True,
+                       'features': [4, 5, 6, 7, 8, 10, 11, 12]}
+        data['FS3'] = {'excludeFeatures': False}
+        data['interpolationMethod'] = 'linear'
+        data['enforceZeroTrace'] = True
+        data['capSandR'] = True
+        data['saveTensors'] = True
+        data['removeNan'] = True
+        data['correctInvariants'] = True
+
+        # set flow cases to load
+        data['flowCase'] = ['PeriodicHills',
+                            'ConvDivChannel',
+                            'CurvedBackwardFacingStep',
+                            'SquareDuct']
+        data['Re'] = [['700', '1400', '2800', '5600', '10595'],
+                      ['12600', '7900'],
+                      ['13700'],
+                      ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
+        data['nu'] = [[1.4285714285714286e-03, 7.142857142857143e-04, 3.5714285714285714e-04, 1.7857142857142857e-04,
+                       9.438414346389807e-05],
+                      [7.936507936507937e-05, 1.26582e-04],
+                      [7.299270072992701e-05],
+                      [0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
+        data['nx'] = [[140, 140, 140, 140, 140],
+                      [140, 140],
+                      [300],
+                      [50, 50, 50, 50, 50, 50, 50]]
+        data['ny'] = [[150, 150, 150, 150, 150],
+                      [100, 100],
+                      [150],
+                      [50, 50, 50, 50, 50, 50, 50]]
+        data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
+                         ['kOmega', 'kOmega'],
+                         ['kOmega'],
+                         ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
+        data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
+                            ['7000', '7000'],
+                            ['3000'],
+                            ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+
+        # load in data
+        load_standardized_data(data)
+
+        print('Data successfully reloaded, start initializing TBNN ...')
+        print('______________________________________________________________________________________________')
+    else:
+        print('Data reloading not specified, start initializing TBNN ...')
+        print('______________________________________________________________________________________________')
+
     # set training directories and flow cases
-    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata_fs1_fs2_fs3_reduced'
+    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata'
     training_flow_geom = ['PeriodicHills', 'ConvDivChannel', 'SquareDuct']
     training_cases = [['5600', '10595'], ['12600'], ['2000', '2400', '2900', '3200']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
 
     # set array that holds weight decay parameters
     weight_decay = 10. ** th.linspace(-14, 0, 8)
-    print(weight_decay)
+    print('Weight decay parameter vector:\n', weight_decay)
 
     for weight_decay_ in weight_decay:
 
@@ -34,8 +100,8 @@ if __name__ == '__main__':
 
         # # if pretrained model should be used
         # model.net = th.load(model_path)
+        print('TBNN successfully initialized')
         print('______________________________________________________________________________________________')
-        print('NN initialized')
 
         # specify path to save trained model. base path is combined with weight decay parameter choice
         base_path = ('./storage/models/kaandorp_data/ph_cdc_sd/additional_features' +
