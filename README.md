@@ -26,7 +26,7 @@ pip3 install numpy pandas matplotlib scikit-learn torch torchvision scipy seabor
 ## References
 <a id="1">[1]</a> 
 J. Ling, A. Kurzawaski, J. Templetom (2016).  
-Reynolds averaged turbulence modelling using deep neural networks with embedded invariance
+Reynolds averaged turbulence modelling using deep neural networks with embedded invariance,
 Journal of Fluid Mechanics, 807, 155-166.
 
 <a id="2">[2]</a> 
