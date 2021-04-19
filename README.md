@@ -31,15 +31,15 @@ Journal of Fluid Mechanics, 807, 155-166.
 
 <a id="2">[2]</a> 
 J. Wu, H. Xiao, E. Paterson (2018).  
-Physics-informed machine learning approach for augmenting turbulence models: A comprehensive framework
+Physics-informed machine learning approach for augmenting turbulence models: A comprehensive framework,
 Physical Review Fluids, 7(3), 74602.
 
 <a id="3">[3]</a> 
 J. Wang, J. Wu, J. Ling, G. Iaccarino, H. Xiao (2017).  
-A comprehensive physics-informed machine learning framework for predictive turbulence modeling
+A comprehensive physics-informed machine learning framework for predictive turbulence modeling,
 arXiv.
 
 <a id="4">[4]</a> 
 S. Banjaree, R. Krahl, F. Durst, CH. Zenger (2007).  
-Presentation of anisotropy properties of turbulence, invariants versus eigenvalue approaches
+Presentation of anisotropy properties of turbulence, invariants versus eigenvalue approaches,
 Journal of Turbulence, 8, 1-27
