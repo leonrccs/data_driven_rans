@@ -422,8 +422,7 @@ class TBNNModel:
                 if scheduler is None:
                     pass
                 else:
-                    print(scheduler.state_dict()['_last_lr'])
-
+                    print('Current learning rate: {}'.format(scheduler.state_dict()['_last_lr']))
             # check if moving average decreased
             if (epoch > min_epochs) & (epoch % 10 == 0) & kwargs['early_stopping']:
                 this_val_loss_avg = np.sum(self.val_loss_vector[-moving_average:])/moving_average
