@@ -14,7 +14,7 @@ if __name__ == '__main__':
         data = {}
 
         # set paths
-        data['home'] = '/home/leonriccius/Documents/Fluid_Data'
+        data['home'] = './storage/Fluid_Data'
         data['dns'] = 'dns'
         data['rans'] = 'rans'
         data['target_dir'] = 'tensordata'
@@ -33,35 +33,13 @@ if __name__ == '__main__':
         data['correctInvariants'] = True
 
         # set flow cases to load
-        data['flowCase'] = ['PeriodicHills',
-                            'ConvDivChannel',
-                            'CurvedBackwardFacingStep',
-                            'SquareDuct']
-        data['Re'] = [['700', '1400', '2800', '5600', '10595'],
-                      ['12600', '7900'],
-                      ['13700'],
-                      ['1800', '2000', '2400', '2600', '2900', '3200', '3500']]
-        data['nu'] = [[1.4285714285714286e-03, 7.142857142857143e-04, 3.5714285714285714e-04, 1.7857142857142857e-04,
-                       9.438414346389807e-05],
-                      [7.936507936507937e-05, 1.26582e-04],
-                      [7.299270072992701e-05],
-                      [0.00026776, 0.00024098, 0.00020083, 0.00018537, 0.00016619, 0.00015061, 0.00013770]]
-        data['nx'] = [[140, 140, 140, 140, 140],
-                      [140, 140],
-                      [300],
-                      [50, 50, 50, 50, 50, 50, 50]]
-        data['ny'] = [[150, 150, 150, 150, 150],
-                      [100, 100],
-                      [150],
-                      [50, 50, 50, 50, 50, 50, 50]]
-        data['model'] = [['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega'],
-                         ['kOmega', 'kOmega'],
-                         ['kOmega'],
-                         ['kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega', 'kOmega']]
-        data['ransTime'] = [['30000', '30000', '30000', '30000', '30000'],
-                            ['7000', '7000'],
-                            ['3000'],
-                            ['40000', '40000', '50000', '50000', '50000', '50000', '50000']]
+        data['flowCase'] = ['ConvDivChannel']
+        data['Re'] = [['12600', '7900']]
+        data['nu'] = [[7.936507936507937e-05, 1.26582e-04]]
+        data['nx'] = [[140, 140]]
+        data['ny'] = [[100, 100]]
+        data['model'] = [['kOmega', 'kOmega']]
+        data['ransTime'] = [['7000', '7000']]
 
         # load in data
         load_standardized_data(data)
@@ -73,13 +51,14 @@ if __name__ == '__main__':
         print('______________________________________________________________________________________________')
 
     # set training directories and flow cases
-    training_dir = '/home/leonriccius/Documents/Fluid_Data/tensordata'
-    training_flow_geom = ['PeriodicHills', 'ConvDivChannel', 'SquareDuct']
-    training_cases = [['5600', '10595'], ['12600'], ['2000', '2400', '2900', '3200']]
+    training_dir = './storage/Fluid_Data/tensordata'
+    training_flow_geom = ['ConvDivChannel']
+    training_cases = [['12600']]
     training_dirs = [os.sep.join([training_dir, geom]) for geom in training_flow_geom]
 
     # set array that holds weight decay parameters
-    weight_decay = 10. ** th.linspace(-14, 0, 8)
+    # weight_decay = 10. ** th.linspace(-14, 0, 8)
+    weight_decay = [0.0]
     print('Weight decay parameter vector:\n', weight_decay)
 
     for weight_decay_ in weight_decay:
@@ -104,8 +83,7 @@ if __name__ == '__main__':
         print('______________________________________________________________________________________________')
 
         # specify path to save trained model. base path is combined with weight decay parameter choice
-        base_path = ('./storage/models/kaandorp_data/ph_cdc_sd/additional_features' +
-                     '/phill_2800_10595_cdc_12600_sd_2000_2400_2900_3200_reg_1e-10_lr_10e-07_lr_scheduler_seed_12344')
+        base_path = ('./storage/models/example_case')
         save_model_path = os.sep.join([base_path, '{:.0e}'.format(weight_decay_)])
         # save_model_path = base_path
 
