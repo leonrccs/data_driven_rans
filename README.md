@@ -1,10 +1,10 @@
-# data_driven_rans:
+# Physics-Informed Tensor Basis Neural Network (PI-TBNN):
 
-Repository on Master's thesis "Machine Learning Augmented Turbulence Modelling for Reynolds Stress Clorsure Problem"
+Repository on Master's thesis "Machine Learning Augmented Turbulence Modelling for Reynolds Stress Closure Problem"
 
 ## Introduction
 
-This repository contains a pytorch based implementation of the Tensor Basis Neural Network proposed by Ling et al. [[1]](#1). While the network architeckture is the same, the feateure set was extended as in Wu et al. [[2]](#2), [[3]](#3).
+This repository contains a pytorch based implementation of the Tensor Basis Neural Network proposed by Ling et al. [[1]](#1). While the network architecture is the same, the feature set was extended as in Wu et al. [[2]](#2), [[3]](#3).
 
 What the code in this repository can do:
 - Read in RANS data from OpenFOAM, extract scalar invariants, and compute tensor basis
